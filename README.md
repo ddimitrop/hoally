@@ -21,5 +21,3 @@ Basic ideas:
   - Each comment can have subcomments that can have other HOA members as initiators
   - Each comment can have text but also several images or attachments.
   - Root subjects/comments have yes/no vote counts.
-  
-- 
