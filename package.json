@@ -1,0 +1,41 @@
+{
+  "name": "hoally",
+  "version": "1.0.0",
+  "description": "Webapp for an HOA forum",
+  "main": "src/hoally.mjs",
+  "scripts": {
+    "start": "node src/hoally.mjs",
+    "prepare": "husky"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/ddimitrop/hoally.git"
+  },
+  "keywords": [
+    "HOA forum"
+  ],
+  "author": "Dimitris Dimitropoulos ddimitrop@gmail.com",
+  "contributors": [
+    "Leandros Dimitropoulos leandrosdim@gmail.com (https://ldimitrop.net/)"
+  ],
+  "bugs": {
+    "url": "https://github.com/ddimitrop/hoally/issues"
+  },
+  "homepage": "https://github.com/ddimitrop/hoallyreadme",
+  "dependencies": {
+    "commander": "^12.1.0",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "eslint": "^9.5.0",
+    "eslint-config-google-jsdocless": "0.14.1",
+    "eslint-config-prettier": "^9.1.0",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.7",
+    "prettier": "3.3.2"
+  },
+  "lint-staged": {
+    "*.mjs": "eslint --no-cache --fix",
+    "**/*": "prettier --write --ignore-unknown"
+  }
+}
