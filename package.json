@@ -5,6 +5,7 @@
   "main": "src/hoally.mjs",
   "scripts": {
     "start": "node src/hoally.mjs",
+    "test": "npx jasmine --config=jasmine.json",
     "prepare": "husky"
   },
   "repository": {
@@ -32,7 +33,8 @@
     "eslint-config-prettier": "^9.1.0",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.7",
-    "prettier": "3.3.2"
+    "prettier": "3.3.2",
+    "jasmine": "^5.1.0"
   },
   "lint-staged": {
     "*.mjs": "eslint --no-cache --fix",
