@@ -1,4 +1,4 @@
-# hoa-forum
+# hoally
 
 A webapp that allows members of home owner associations to discuss and vote on issues/proposals of their community.
 
