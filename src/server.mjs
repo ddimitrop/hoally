@@ -1,0 +1,58 @@
+import express from 'express';
+import { Command, InvalidArgumentError } from 'commander';
+
+export const DEV_PORT = 8080;
+export const PROD_HTTP_PORT = 80;
+export const PROD_HTTPS_PORT = 443;
+
+export class Server {
+  constructor(program, params, app) {
+    program
+      .name('hoally')
+      .description('Webapp for an HOA forum')
+      .option(
+        '--port <integer>',
+        'Web server port',
+        (value) => {
+          const portNumber = Number(value);
+          if (
+            isNaN(portNumber) ||
+            !Number.isInteger(portNumber) ||
+            portNumber <= 0
+          ) {
+            throw new InvalidArgumentError('Not a positive integer.');
+          }
+          return portNumber;
+        },
+        DEV_PORT,
+      )
+      .option('--https', 'Use https protocol')
+      .option('--prod', 'Prod environment (default port 80 or 443 for https)');
+
+    program.parse(params);
+    this.options = program.opts();
+    this.app = app;
+  }
+
+  start() {
+    const PROD_PORT = this.options.https ? PROD_HTTPS_PORT : PROD_HTTP_PORT;
+    const port = this.options.prod ? PROD_PORT : this.options.port;
+
+    this.app.get('/ping', (request, response) => {
+      // Used only for testing and server health checks.
+      return response.send('OK');
+    });
+
+    this.app.listen(port, () => {
+      console.log(`Listening on port ${port}`);
+    });
+  }
+}
+
+export function startServer() {
+  const app = express();
+  const program = new Command();
+
+  const server = new Server(program, process.argv, app);
+  server.start();
+}
