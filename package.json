@@ -5,7 +5,9 @@
   "main": "src/hoally.mjs",
   "scripts": {
     "start": "node src/hoally.mjs",
-    "prepare": "husky"
+    "prepare": "husky",
+    "container": "sh scripts/docker-build.sh",
+    "container-dev": "sh scripts/docker-run.sh"
   },
   "repository": {
     "type": "git",
