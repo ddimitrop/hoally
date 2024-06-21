@@ -1,8 +1,12 @@
 name: eslint
 
 on:
-  [push, workflow_dispatch]:
-    branches: ['*']
+  push:
+    branches:
+      - '*'
+  workflow_dispatch:
+    branches:
+      - '*'
 
 jobs:
   eslint:
