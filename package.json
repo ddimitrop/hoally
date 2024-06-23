@@ -5,6 +5,7 @@
   "main": "src/hoally.mjs",
   "scripts": {
     "start": "node src/hoally.mjs",
+    "test": "npx jasmine --config=jasmine.json",
     "prepare": "husky",
     "container": "sh scripts/docker-build.sh",
     "container-dev": "sh scripts/docker-run.sh"
@@ -35,6 +36,8 @@
     "prettier": "3.3.2",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.7"
+    "lint-staged": "^15.2.7",
+    "jasmine": "^5.1.0"
   },
   "lint-staged": {
     "*.mjs": "eslint --fix",
