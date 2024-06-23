@@ -14,5 +14,4 @@ then
 fi
 
 docker stop hoally-$environment 2>/dev/null
-docker rm hoally-$environment 2>/dev/null
-docker run -d -p 8080:8080 --name  hoally-$environment hoally:$version
+docker run -d --rm -p 8080:8080 --name  hoally-$environment hoally:$version
