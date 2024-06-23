@@ -5,7 +5,10 @@
   "main": "src/hoally.mjs",
   "scripts": {
     "start": "node src/hoally.mjs",
-    "prepare": "husky"
+    "test": "npx jasmine --config=jasmine.json",
+    "prepare": "husky",
+    "container": "sh scripts/docker-build.sh",
+    "container-dev": "sh scripts/docker-run.sh"
   },
   "repository": {
     "type": "git",
@@ -30,12 +33,13 @@
     "eslint": "^9.5.0",
     "eslint-config-google-jsdocless": "0.14.1",
     "eslint-config-prettier": "^9.1.0",
+    "prettier": "3.3.2",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.7",
-    "prettier": "3.3.2"
+    "jasmine": "^5.1.0"
   },
   "lint-staged": {
-    "*.mjs": "eslint --no-cache --fix",
+    "*.mjs": "eslint --fix",
     "**/*": "prettier --write --ignore-unknown"
   }
 }
