@@ -8,6 +8,7 @@ DELETE FROM  member;
 DELETE FROM  hoauser;
 DELETE FROM  community;
 
+-- Sample data encryption was done with the secret: hoally-pwd
 INSERT INTO community VALUES (
     DEFAULT, 
     'Bonita Bluffs', 
