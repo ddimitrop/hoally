@@ -48,18 +48,22 @@ CREATE INDEX ON community(zipcode);
 CREATE TABLE hoauser (
     id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     -- Protecting personal information by encrypting.
-    encrypted_name VARCHAR(300) UNIQUE NOT NULL,
-    encrypted_full_name VARCHAR(300) UNIQUE,
-    encrypted_email VARCHAR(300) UNIQUE,
+    -- We also need the hashed values for querying.
+    hashed_name VARCHAR(200) UNIQUE NOT NULL,
+    encrypted_name VARCHAR(300) NOT NULL,
+    encrypted_full_name VARCHAR(300),
+    hashed_email VARCHAR(200) UNIQUE NOT NULL,
+    encrypted_email VARCHAR(300) NOT NULL,
+    email_validated boolean,
     -- Only storing hashed passwords or tokens
     hashed_password VARCHAR(200) NOT NULL,
-    -- If the password is a temporary token that should be changed (user forgot password).
-    password_is_token BOOLEAN NOT NULL,
+    -- Temporary token (user forgot password).
+    hashed_token VARCHAR(200) UNIQUE,
+    token_creation_timestamp TIMESTAMP,
     encrypted_icon_file VARCHAR(100)
 );
 
-CREATE UNIQUE INDEX ON hoauser(encrypted_name, hashed_password);
-CREATE UNIQUE INDEX ON hoauser(encrypted_email);
+CREATE UNIQUE INDEX ON hoauser(hashed_name, hashed_password);
 
 -- A member of an HOA community. It might be assigned to an hoa user or an orphan
 -- waiting for a user to take it over with the use of a token.

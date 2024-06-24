@@ -40,43 +40,62 @@ INSERT INTO community VALUES (
 
 INSERT INTO hoauser VALUES(
     DEFAULT,
-    'v+m89TitBh3qEydf|jfUPF1WNWM5q|u80MCuV4RUctluMixxc1ng==', -- rconstand
-    'k0PXSbu6EakqnuYq|k3eOWfqQ1v+GaHncLcop70c=|ZDsZXmuVIVPBSrMftiJ7ZA==', -- Rodger Constandse
-    'xPGl97Vc+6ItO+6i|9DAxTCk8lmm1diadtZhus9Q4z7I5|f3BCVEqI/iJPhmZbg4sItw==', -- rconstand@hotmail.com
-    'c0174ebb5c5be09b36ff847735d7e9839ce32f0b10106377fdda3b2c69ca5888', -- test123
-    false,
-    'u-341438709478.epng'
-);
-
-INSERT INTO hoauser VALUES(
-    DEFAULT,
-    'EtIeIA1YGaN9JVQS|k0HACPx1Mi0=|Fi9pThoZFEht1aqnc+UiWg==', -- sorensen
-    'GznO2vwMyCWwn/mV|VZAAWevwTi755itilO9BgQ==|hYAo19xxyIRPmjou04KPfA==', -- Richard Sorensen
-    '/uIto+uS7GUGxbWj|wbk1epd0xTTpSSOC3MRXsqdC9Tw=|rNNs0Uua85bFJnf7IdMr9g==', -- sorensen76@gmail.com
-    '16bc2a30fdddce89350a8857a69aee2152002b447b2ce84bb9621eeeab3e7eb9', -- xDFHGSS4#1_s
-    false,
-    'u-5782328982378.epng'
-);
-
-INSERT INTO hoauser VALUES(
-    DEFAULT,
-    'UGWkRZIimJhXjIYC|w23gNK2SiVeopjM=|vAeubLZI3mSBa0N7QckRZQ==', -- Leticia Lee
-    'sMWco20t/mtbHpOy|NA3r01XOz5amRps=|S/I58iJd/8wDlNh2BXaxEA==', -- Leticia Lee
-    'ZrNmdI625c8Wglob|Z/bhcBppaccfJGDerTQl|WHMD6jeXkTDgPgSb8pIs1A==', -- llee@imaxcp.com
-    'fb6ec4b71fd459789fdb196e68ec34fc26a860da4bed52e89ec1ba4f8e547fef', -- 34587-123-34
+    '1e7c51ad753162eb08a380eea75959571d816f96daa03e002031c8462d3a3204',
+    'v+m89TitBh3qEydf|jfUPF1WNWM5q|u80MCuV4RUctluMixxc1ng==',
+    'k0PXSbu6EakqnuYq|k3eOWfqQ1v+GaHncLcop70c=|ZDsZXmuVIVPBSrMftiJ7ZA==',
+    '8e4a4180647b7904ccc6edc811edbbff9bf0450792bcdcbc8334a796ce00a985',
+    'xPGl97Vc+6ItO+6i|9DAxTCk8lmm1diadtZhus9Q4z7I5|f3BCVEqI/iJPhmZbg4sItw==',
     true,
-    null
-);
+    'c0174ebb5c5be09b36ff847735d7e9839ce32f0b10106377fdda3b2c69ca5888',
+    null,
+    null,
+    'u-341438709478.epng'
+);    
+
 
 INSERT INTO hoauser VALUES(
     DEFAULT,
-    '6I11f2W66zc4JrIv|mNu1GafWOF97|s2GMe9fMJNM+0tuWx97NOg==', -- hoamaster
-    'sAsu8KZKdp+YQZIC|/WDQhfRg1we7/a7aOpmTMQ==|BjxIjmYyVY6OIH2kEQwn8A==', -- Hoally Masterson
-    '8bMXI+tVrfT42nsc|nb3czYu07ns/1QDVoQ==|/Fa7pK2z1F9TB/KPEJlfVQ==', -- hoa@gmail.com
-    'd678604195b2043e3ca8613813c51ea5b77efc671c8b4a09abb292fd572e53b8', -- hoally-pwd
-    false,
-    null
-);
+    'aaab132eb08e77395bec71626ad184e0b00abbeecc60bb3003260fda487a0eb6',
+    'EtIeIA1YGaN9JVQS|k0HACPx1Mi0=|Fi9pThoZFEht1aqnc+UiWg==',
+    'GznO2vwMyCWwn/mV|VZAAWevwTi755itilO9BgQ==|hYAo19xxyIRPmjou04KPfA==',
+    '31c801cc3d3e2fec369786133ceeda4ba18c9cd4d7a1a045db90983b518db15d',
+    '/uIto+uS7GUGxbWj|wbk1epd0xTTpSSOC3MRXsqdC9Tw=|rNNs0Uua85bFJnf7IdMr9g==',
+    true,
+    '16bc2a30fdddce89350a8857a69aee2152002b447b2ce84bb9621eeeab3e7eb9',
+    null,
+    null,
+    'u-5782328982378.epng'
+);    
+
+
+INSERT INTO hoauser VALUES(
+    DEFAULT,
+    'e778a1c3e2f1a368728ac599f44ecf5978af8396c182f267a0a395865508f358',
+    'UGWkRZIimJhXjIYC|w23gNK2SiVeopjM=|vAeubLZI3mSBa0N7QckRZQ==',
+    'sMWco20t/mtbHpOy|NA3r01XOz5amRps=|S/I58iJd/8wDlNh2BXaxEA==',
+    '1c8dc42188b50e6ca32d2ad91a87b0b3c1e473829f6a234761cf44fa0e9b9f81',
+    'ZrNmdI625c8Wglob|Z/bhcBppaccfJGDerTQl|WHMD6jeXkTDgPgSb8pIs1A==',
+    true,
+    'fb6ec4b71fd459789fdb196e68ec34fc26a860da4bed52e89ec1ba4f8e547fef',
+    null,
+    null,
+    'null'
+);    
+
+
+INSERT INTO hoauser VALUES(
+    DEFAULT,
+    '06fa010d7979b1bd4fc985be97b30962335492213d6621f86e4bac4b589e2189',
+    '6I11f2W66zc4JrIv|mNu1GafWOF97|s2GMe9fMJNM+0tuWx97NOg==',
+    'sAsu8KZKdp+YQZIC|/WDQhfRg1we7/a7aOpmTMQ==|BjxIjmYyVY6OIH2kEQwn8A==',
+    '02662c5e4860e9151a8eee6ef7b59f35f18b363c4c353003d2cd8b0f7eab293c',
+    '8bMXI+tVrfT42nsc|nb3czYu07ns/1QDVoQ==|/Fa7pK2z1F9TB/KPEJlfVQ==',
+    true,
+    'd678604195b2043e3ca8613813c51ea5b77efc671c8b4a09abb292fd572e53b8',
+    null,
+    null,
+    'null'
+);    
 
 ----------------------------------------------
 
