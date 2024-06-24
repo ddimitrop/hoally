@@ -5,6 +5,7 @@ import {
   createDecipheriv,
   randomBytes,
   createHash,
+  randomUUID,
 } from 'node:crypto';
 
 /**
@@ -33,7 +34,7 @@ export class Crypto {
   }
 
   uuid() {
-    return crypto.randomUUID();
+    return randomUUID();
   }
 }
 
