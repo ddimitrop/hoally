@@ -31,6 +31,10 @@ export class Crypto {
   decrypt(encryptedText) {
     return decrypt(this.secret, encryptedText);
   }
+
+  uuid() {
+    return crypto.randomUUID();
+  }
 }
 
 function hash(secret, text) {

@@ -13,4 +13,8 @@ describe('Crypto', () => {
   it('Will encrypt a string and decrypt it back', () => {
     // TODO(leandrosdim): implement
   });
+
+  it('Will return a uuid', () => {
+    // TODO(leandrosdim): implement
+  });
 });
