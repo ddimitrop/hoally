@@ -1,0 +1,1 @@
+docker exec -it hoally-db psql --username=hoa hoadb

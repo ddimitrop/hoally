@@ -7,8 +7,10 @@
     "start": "node src/hoally.mjs",
     "test": "npx jasmine --config=jasmine.json",
     "prepare": "husky",
-    "container": "sh scripts/docker-build.sh",
-    "container-dev": "sh scripts/docker-run.sh"
+    "container": "bash scripts/docker-build.sh",
+    "container-dev": "bash scripts/docker-run.sh",
+    "install-schema": "docker exec -i hoally-db psql -U postgres < database/schema.sql",
+    "add-sample": "docker exec -i hoally-db psql -U postgres < database/sample.sql"
   },
   "repository": {
     "type": "git",
@@ -27,7 +29,8 @@
   "homepage": "https://github.com/ddimitrop/hoallyreadme",
   "dependencies": {
     "commander": "^12.1.0",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "postgres": "^3.4.4"
   },
   "devDependencies": {
     "eslint": "^9.5.0",
