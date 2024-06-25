@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/hoally.mjs",
     "test": "npx jasmine --config=jasmine.json",
+    "integration": "npx jasmine --config=jasmine-integration.json",
     "prepare": "husky",
     "container": "sh scripts/docker-build.sh",
     "container-dev": "sh scripts/docker-run.sh"
@@ -27,7 +28,8 @@
   "homepage": "https://github.com/ddimitrop/hoallyreadme",
   "dependencies": {
     "commander": "^12.1.0",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "postgres": "^3.4.4"
   },
   "devDependencies": {
     "eslint": "^9.5.0",
