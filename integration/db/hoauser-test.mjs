@@ -1,4 +1,4 @@
-import { Crypto } from '../src/crypto.mjs';
+import { Crypto } from '../../src/utils/crypto.mjs';
 import postgres from 'postgres';
 import { HoaUser } from '../../src/db/hoauser.mjs';
 

@@ -1,4 +1,4 @@
-import { Crypto } from '../src/crypto.mjs';
+import { Crypto } from '../../src/utils/crypto.mjs';
 
 describe('Crypto', () => {
   const crypto = new Crypto('hoally-pwd');
