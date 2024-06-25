@@ -73,18 +73,16 @@ CREATE TABLE member (
     -- the membership should be orphan again.
     hoauser_id INTEGER REFERENCES hoauser(id) ON DELETE SET NULL,
     -- Used when there is no assigned hoauser_id for members that have not registered yet.
-    new_user_token VARCHAR(200),
+    hashed_token VARCHAR(200) UNIQUE,
+    token_creation_timestamp TIMESTAMP,
     community_id INTEGER NOT NULL REFERENCES community(id) ON DELETE CASCADE,
     address VARCHAR(200) NOT NULL,
     is_board_member BOOLEAN NOT NULL DEFAULT false,
-    is_moderator BOOLEAN NOT NULL DEFAULT false,
-    CONSTRAINT hoauser_or_token CHECK (
-        (hoauser_id IS NOT NULL AND new_user_token IS NULL) OR 
-        (hoauser_id IS  NULL AND new_user_token IS NOT NULL))
+    is_moderator BOOLEAN NOT NULL DEFAULT false
 );
 
 CREATE UNIQUE INDEX ON member(community_id, address);
-CREATE UNIQUE INDEX ON member(new_user_token);
+CREATE UNIQUE INDEX ON member(hashed_token);
 
 -- TODO: refine/decide on more tags
 CREATE TYPE tag_enum AS ENUM ('complaints', 'ideas', 'garden');
