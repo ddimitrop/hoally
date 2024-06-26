@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/hoally.mjs",
     "test": "npx jasmine --config=jasmine.json",
+    "integration": "npx jasmine --config=jasmine-integration.json",
     "prepare": "husky",
     "container": "bash scripts/docker-build.sh",
     "container-dev": "bash scripts/docker-run.sh",
