@@ -27,3 +27,4 @@ jobs:
         run: |
           npx eslint
           npx prettier --list-different  .
+          cd app; npx eslint .
