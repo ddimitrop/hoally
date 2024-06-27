@@ -7,20 +7,41 @@ import {
 } from '../src/server.mjs';
 
 describe('hoally Server', () => {
+  let mockApp;
+  let mockExpress;
+  let program;
+  let errStr;
+  let server;
+  let mockResponse;
+  const staticResult = {};
+
+  beforeEach(() => {
+    mockApp = jasmine.createSpyObj('expressApp', ['get', 'listen', 'use']);
+    mockExpress = jasmine.createSpyObj('express', ['static']);
+    program = new Command();
+    program.exitOverride();
+    program.configureOutput({
+      writeErr: (str) => (errStr = str),
+    });
+    mockResponse = jasmine.createSpyObj('respones', ['send', 'sendFile']);
+    mockExpress.static.and.returnValue(staticResult);
+  });
+
+  function prepareServer(args) {
+    server = new Server(program, args.split(' '), mockApp, mockExpress);
+  }
+
+  function serverOptions(args = '') {
+    prepareServer(args);
+    return program.opts();
+  }
+
+  function startServer(args = '') {
+    prepareServer(args);
+    server.start();
+  }
+
   describe('command line arguements', () => {
-    let errStr;
-
-    function serverOptions(args = '') {
-      const mockApp = jasmine.createSpyObj('expressApp', ['get', 'listen']);
-      const program = new Command();
-      program.exitOverride();
-      program.configureOutput({
-        writeErr: (str) => (errStr = str),
-      });
-      new Server(program, args.split(' '), mockApp);
-      return program.opts();
-    }
-
     it('when missing uses default params', () => {
       expect(serverOptions()).toEqual({ port: DEV_PORT });
     });
@@ -42,18 +63,9 @@ describe('hoally Server', () => {
   });
 
   describe('listens to port', () => {
-    let mockApp;
-    function startServer(args = '') {
-      mockApp = jasmine.createSpyObj('expressApp', ['get', 'listen']);
-      const program = new Command();
-      const server = new Server(program, args.split(' '), mockApp);
-      server.start();
-    }
-
     it('handles ping requests', () => {
       startServer();
       expect(mockApp.get).toHaveBeenCalledWith('/ping', jasmine.any(Function));
-      const mockResponse = jasmine.createSpyObj('respones', ['send']);
       const pingHandlerCallback = mockApp.get.calls.first().args[1];
       pingHandlerCallback(undefined, mockResponse);
       expect(mockResponse.send).toHaveBeenCalledWith('OK');
@@ -90,6 +102,21 @@ describe('hoally Server', () => {
       expect(mockApp.listen).toHaveBeenCalledWith(
         PROD_HTTP_PORT,
         jasmine.anything(),
+      );
+    });
+  });
+
+  describe('ingregrates with react', () => {
+    it('forwards to the react router', () => {
+      startServer();
+      expect(mockExpress.static).toHaveBeenCalledWith(
+        jasmine.stringMatching('build'),
+      );
+      expect(mockApp.use).toHaveBeenCalledWith(staticResult);
+      const routerCallback = mockApp.use.calls.all()[1].args[0];
+      routerCallback(undefined, mockResponse, null);
+      expect(mockResponse.sendFile).toHaveBeenCalledWith(
+        jasmine.stringMatching('index.html'),
       );
     });
   });

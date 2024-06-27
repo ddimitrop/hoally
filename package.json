@@ -4,11 +4,12 @@
   "description": "Webapp for an HOA forum",
   "main": "src/hoally.mjs",
   "scripts": {
+    "prestart": "cd app; npm run build",
     "start": "node src/hoally.mjs",
+    "prestart-dev": "cd app; npm run build",
     "start-dev": "nodemon src/hoally.mjs",
     "test": "npx jasmine --config=jasmine.json",
     "integration": "npx jasmine --config=jasmine-integration.json",
-    "prepare": "husky",
     "container": "bash scripts/docker-build.sh",
     "container-dev": "bash scripts/docker-run.sh",
     "install-schema": "docker exec -i hoally-db psql -U postgres < database/schema.sql",
