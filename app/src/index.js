@@ -3,18 +3,12 @@ import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import './index.css';
 import App from './App';
-import Community from './Community';
 
 const router = createBrowserRouter([
   {
     path: '/',
     element: <App />,
-    children: [
-      {
-        path: 'community/:communityId',
-        element: <Community />,
-      },
-    ],
+    children: [],
   },
 ]);
 
