@@ -182,3 +182,110 @@ export class HoaUser {
  * The token expiration interval (12 hours from creation).
  */
 const TOKEN_EXPIRATION = '12:00:00';
+
+const AUTH_COOKIE = 'HAU';
+
+const NULL_VALUE = String(null);
+
+/** Loads and returns the user using the authentication cookie. */
+export function hoaUserApi(connection, app) {
+  app.get('/api/hoauser', async (req, res) => {
+    const {
+      headers: { cookie },
+    } = req;
+    if (!cookie) {
+      res.json(NULL_VALUE);
+      return;
+    }
+    const authCookie = cookie
+      .split(';')
+      .map((c) => c.split('='))
+      .find((p) => p && p.length === 2 && p[0] === AUTH_COOKIE);
+    if (!authCookie) {
+      res.json(NULL_VALUE);
+      return;
+    }
+    const auth = authCookie[1];
+    const credentials = auth.split('-');
+    if (credentials.length != 2) {
+      res.json(NULL_VALUE);
+      return;
+    }
+    try {
+      const hoaUser = await HoaUser.get(connection, credentials);
+      res.json(hoaUser.getData());
+    } catch (e) {
+      if (e.message === 'Login error') {
+        res.json(NULL_VALUE);
+      } else {
+        res.json({ error: e.message });
+      }
+    }
+  });
+
+  /** Clears up the authentication cookie. */
+  app.get('/api/hoauser/logout', async (req, res) => {
+    res.clearCookie(AUTH_COOKIE);
+    res.json(true);
+  });
+
+  /** Signs up an existing user using name/password and sets the authentication cookie. */
+  app.post('/api/hoauser/signin', async (req, res) => {
+    const { name, password } = req.body;
+    try {
+      const credentials = HoaUser.loginCredentials(
+        connection.crypto,
+        name,
+        password,
+      );
+      const hoaUser = await HoaUser.get(connection, credentials);
+      const auth = credentials.join('-');
+      res.cookie(AUTH_COOKIE, auth, { httpOnly: true });
+      res.json(hoaUser.getData());
+    } catch (e) {
+      if (e.message === 'Login error') {
+        res.json(NULL_VALUE);
+      } else {
+        res.json({ error: e.message });
+      }
+    }
+  });
+
+  /** Creates a new user and sets the authentication cookie. */
+  app.post('/api/hoauser', async (req, res) => {
+    const { name, fullName, email, password } = req.body;
+    try {
+      const hoaUser = await HoaUser.create(
+        connection,
+        name,
+        fullName,
+        email,
+        password,
+      );
+      const credentials = HoaUser.loginCredentials(
+        connection.crypto,
+        name,
+        password,
+      );
+      const auth = credentials.join('-');
+      res.cookie(AUTH_COOKIE, auth, { httpOnly: true });
+      res.json(hoaUser.getData());
+    } catch (e) {
+      res.json({ error: e.message });
+    }
+  });
+
+  /** Checks if a user name is already used. */
+  app.post('/api/hoauser/validate/name', async (req, res) => {
+    const { name } = req.body;
+    const result = await HoaUser.nameUsed(connection, name);
+    res.json(!result);
+  });
+
+  /** Checks if an email is already used. */
+  app.post('/api/hoauser/validate/email', async (req, res) => {
+    const { email } = req.body;
+    const result = await HoaUser.emailUsed(connection, email);
+    res.json(!result);
+  });
+}

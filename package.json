@@ -6,8 +6,7 @@
   "scripts": {
     "prestart": "cd app; npm run build",
     "start": "node src/hoally.mjs",
-    "prestart-dev": "cd app; npm run build",
-    "start-dev": "nodemon src/hoally.mjs",
+    "start-dev": "nodemon src/hoally.mjs -- --proxy 'http://lacroix.local:3000' --port 8081",
     "test": "npx jasmine --config=jasmine.json",
     "integration": "npx jasmine --config=jasmine-integration.json",
     "container": "bash scripts/docker-build.sh",
@@ -32,7 +31,9 @@
   "homepage": "https://github.com/ddimitrop/hoallyreadme",
   "dependencies": {
     "commander": "^12.1.0",
+    "cors": "^2.8.5",
     "express": "^4.19.2",
+    "http-proxy-middleware": "^3.0.0",
     "postgres": "^3.4.4"
   },
   "devDependencies": {

@@ -3,6 +3,7 @@ import {
   DEV_PORT,
   PROD_HTTP_PORT,
   PROD_HTTPS_PORT,
+  parseOptions,
   Server,
 } from '../src/server.mjs';
 
@@ -13,31 +14,37 @@ describe('hoally Server', () => {
   let errStr;
   let server;
   let mockResponse;
+  let mockConnection;
+  let mockApi;
   const staticResult = {};
 
   beforeEach(() => {
-    mockApp = jasmine.createSpyObj('expressApp', ['get', 'listen', 'use']);
-    mockExpress = jasmine.createSpyObj('express', ['static']);
     program = new Command();
     program.exitOverride();
     program.configureOutput({
       writeErr: (str) => (errStr = str),
     });
+
+    mockApp = jasmine.createSpyObj('expressApp', ['get', 'listen', 'use']);
+    mockExpress = jasmine.createSpyObj('express', ['static']);
     mockResponse = jasmine.createSpyObj('respones', ['send', 'sendFile']);
     mockExpress.static.and.returnValue(staticResult);
+    mockConnection = {};
+    mockApi = { init: () => {} };
   });
 
-  function prepareServer(args) {
-    server = new Server(program, args.split(' '), mockApp, mockExpress);
-  }
-
   function serverOptions(args = '') {
-    prepareServer(args);
-    return program.opts();
+    return parseOptions(program, args.split(' '));
   }
 
   function startServer(args = '') {
-    prepareServer(args);
+    server = new Server(
+      parseOptions(program, args.split(' ')),
+      mockApp,
+      mockExpress,
+      mockConnection,
+      mockApi,
+    );
     server.start();
   }
 
@@ -113,7 +120,7 @@ describe('hoally Server', () => {
         jasmine.stringMatching('build'),
       );
       expect(mockApp.use).toHaveBeenCalledWith(staticResult);
-      const routerCallback = mockApp.use.calls.all()[1].args[0];
+      const routerCallback = mockApp.use.calls.mostRecent().args[0];
       routerCallback(undefined, mockResponse, null);
       expect(mockResponse.sendFile).toHaveBeenCalledWith(
         jasmine.stringMatching('index.html'),
