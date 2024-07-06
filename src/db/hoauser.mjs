@@ -156,15 +156,15 @@ export class HoaUser {
     return [crypto.hash(name), crypto.hash(password)];
   }
 
-  static async forgotPassword(connection, email) {
+  static async getToken(connection, email) {
     const emailUsed = await HoaUser.emailUsed(connection, email);
     if (!emailUsed) {
       throw new Error('Not used email');
     }
-    return HoaUser.getToken(connection, email);
+    return HoaUser.updateToken(connection, email);
   }
 
-  static async getToken(connection, email) {
+  static async updateToken(connection, email) {
     const { sql, crypto } = connection;
     const token = crypto.uuid();
     const hashedToken = crypto.hash(token);
@@ -287,5 +287,25 @@ export function hoaUserApi(connection, app) {
     const { email } = req.body;
     const result = await HoaUser.emailUsed(connection, email);
     res.json(!result);
+  });
+
+  /** Signs up an existing user using name/password and sets the authentication cookie. */
+  app.post('/api/hoauser/token', async (req, res) => {
+    const { email } = req.body;
+    try {
+      const token = await HoaUser.getToken(connection, email);
+      await connection.sendMail(
+        email,
+        'Please validate your HOAlly account',
+        `Validate your HOAlly account by following <a href="${req.headers.origin}/validate-email/${token}"> this link</a>.`,
+      );
+      res.json(token);
+    } catch (e) {
+      if (e.message === 'Not used email') {
+        res.json(NULL_VALUE);
+      } else {
+        res.json({ error: e.message });
+      }
+    }
   });
 }

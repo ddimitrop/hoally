@@ -4,14 +4,14 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useContext } from 'react';
 import { Global } from './Global.js';
 
-const GlobalSnackBar = ({ error }) => {
+const GlobalSnackBar = () => {
   const global = useContext(Global);
   const action = (
     <IconButton
       size="small"
       aria-label="close"
       color="inherit"
-      onClick={() => global.set(error, '')}
+      onClick={() => global.setAppError('')}
     >
       <CloseIcon fontSize="small" />
     </IconButton>
@@ -19,10 +19,10 @@ const GlobalSnackBar = ({ error }) => {
 
   return (
     <Snackbar
-      open={!!global.get(error)}
+      open={!!global.appError}
       autoHideDuration={6000}
-      onClose={() => global.set(error, '')}
-      message={global.get(error)}
+      onClose={() => global.setAppError('')}
+      message={global.appError}
       action={action}
     />
   );

@@ -2,13 +2,12 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
 import Box from '@mui/material/Box';
-import TopBar from './TopBar.js';
-import Content from './Content.js';
-import GlobalSnackBar from './GlobalSnackBar.js';
-import { global, Global } from './Global.js';
+import TopBar from './TopBar';
+import GlobalSnackBar from './GlobalSnackBar';
+import { Global } from './Global';
 import { getData } from './json-utils.js';
-import { useState } from 'react';
-import { valueState } from './state-utils.js';
+import { useContext, useEffect } from 'react';
+import { Outlet, useLoaderData } from 'react-router-dom';
 
 const theme = createTheme({
   typography: {
@@ -34,25 +33,22 @@ const theme = createTheme({
   },
 });
 
-function App() {
-  // Add the hoaUser in global state.
-  global.addState(useState({}), 'hoaUser');
-  global.addState(useState(''), 'appError');
+export default function App() {
+  const global = useContext(Global);
 
-  if (!global.hoaUserPending) {
-    global.hoaUserPending = true;
-    // Load the signed in cookie (using the authcookie if exists), when there is
-    // not a user yet.
-    getData('/api/hoauser')
-      .then((hoaUser) => {
-        if (hoaUser) {
-          global.setHoaUser(hoaUser);
-        }
-      })
-      .catch((e) => {
-        global.setAppError(`Server error ${e.message}`);
-      });
-  }
+  // Load the signed in cookie (using the authcookie if exists), when there is
+  // not a user yet.
+  const { hoaUser, error } = useLoaderData();
+  useEffect(() => {
+    if (error) {
+      global.setAppError(`Server error ${error}`);
+    } else if (hoaUser) {
+      if (!hoaUser.email_validated) {
+        global.setNeedsEmailValidation(true);
+      }
+      global.setHoaUser(hoaUser);
+    }
+  });
 
   return (
     <Global.Provider value={global}>
@@ -60,12 +56,19 @@ function App() {
         <CssBaseline />
         <Box className="App" sx={{ flexGrow: 1 }}>
           <TopBar />
-          <Content />
-          <GlobalSnackBar error="appError" />;
+          <Outlet />
+          <GlobalSnackBar />;
         </Box>
       </ThemeProvider>
     </Global.Provider>
   );
 }
 
-export default App;
+export async function appLoader() {
+  try {
+    const hoaUser = await getData('/api/hoauser');
+    return { hoaUser };
+  } catch (e) {
+    return { error: e.message };
+  }
+}

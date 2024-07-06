@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { hoaUserApi } from './db/hoauser.mjs';
 import cors from 'cors';
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import { createTransport } from 'nodemailer';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -125,11 +126,48 @@ export function prepareConnection(options) {
     username: userName,
     password: password,
   });
-  return { crypto, sql };
+
+  const emailSecrets = fs.readFileSync(
+    `${SECRETS_DIRECTORY}/hoa-email`,
+    'utf8',
+  );
+  const emailCredentials = emailSecrets
+    .split('\n')
+    .map((line) => line.split(':'))
+    .find((row) => row[0] === environment);
+  if (!emailCredentials) throw Error('No hoa-email secrets file');
+  const [, emailName, emailPassword] = emailCredentials;
+  const EMAIL_SERVICE = 'gmail';
+  const emailAddress = `${emailName}@gmail.com`;
+
+  console.log(emailName, emailPassword, emailAddress);
+
+  const transporter = createTransport({
+    service: EMAIL_SERVICE,
+    auth: {
+      user: emailName,
+      pass: emailPassword,
+    },
+  });
+
+  const sendMail = (to, subject, html) => {
+    const mailOptions = { from: emailAddress, to, subject, html };
+    return new Promise((resolve, reject) => {
+      transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(info);
+        }
+      });
+    });
+  };
+
+  return { crypto, sql, sendMail };
 }
 
 const api = {
-  init: (conection, app) => {
+  init: (connection, app) => {
     hoaUserApi(connection, app);
   },
 };

@@ -39,3 +39,9 @@ export async function postData(url, data) {
   if (responseData === NULL_VALUE) return null;
   return responseData;
 }
+
+export async function postForm(url, event) {
+  const formData = new FormData(event.currentTarget);
+  const formJson = Object.fromEntries(formData.entries());
+  return postData(url, formJson);
+}
