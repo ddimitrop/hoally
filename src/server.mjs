@@ -140,8 +140,6 @@ export function prepareConnection(options) {
   const EMAIL_SERVICE = 'gmail';
   const emailAddress = `${emailName}@gmail.com`;
 
-  console.log(emailName, emailPassword, emailAddress);
-
   const transporter = createTransport({
     service: EMAIL_SERVICE,
     auth: {

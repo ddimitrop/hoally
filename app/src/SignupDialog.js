@@ -50,8 +50,8 @@ const SingupDialog = (props) => {
       invalidFields[field] = value;
       setInvalidFields(invalidFields);
       postData(`/api/hoauser/validate/${field}`, { [field]: value })
-        .then((value) => {
-          if (!value) {
+        .then(({ ok }) => {
+          if (!ok) {
             setErrorSeverity('error');
             setErrorMessage(`There is already an account with this ${label}.`);
             callback(true);
@@ -66,6 +66,7 @@ const SingupDialog = (props) => {
   }
 
   function recoverAccount() {
+    // TO DO
     postData('/hoauser/recover', invalidFields['email']).then((ok) => {
       if (ok) {
         setErrorMessage('Checkout of your emails for a recovery link.');
@@ -85,12 +86,16 @@ const SingupDialog = (props) => {
             event.preventDefault();
             if (nameError || emailError) return;
             postForm('/api/hoauser', event)
-              .then((hoaUser) => {
+              .then(({ hoaUser }) => {
                 global.setHoaUser(hoaUser);
                 close();
-                sendValidationEmail(hoaUser.email).then(() => {
-                  setSignupSuccess(true);
-                });
+                sendValidationEmail(hoaUser.email)
+                  .then(() => {
+                    setSignupSuccess(true);
+                  })
+                  .catch((e) => {
+                    global.setAppError(e.message);
+                  });
               })
               .catch((e) => {
                 exceptionMessage(e);

@@ -38,15 +38,12 @@ const SinginDialog = (props) => {
         onSubmit: (event) => {
           event.preventDefault();
           signin('/api/hoauser/signin', event)
-            .then((hoaUser) => {
+            .then(({ hoaUser, appError }) => {
               if (hoaUser) {
-                global.setHoaUser(hoaUser);
-                if (!hoaUser.email_validated) {
-                  global.setNeedsEmailValidation(true);
-                }
+                global.loadHoaUser(hoaUser);
                 close();
               } else {
-                setErrorMessage('Login failed');
+                setErrorMessage(appError);
                 // TODO (recover);
               }
             })

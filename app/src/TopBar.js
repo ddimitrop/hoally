@@ -31,10 +31,9 @@ const TopBar = () => {
 
   const logout = function () {
     getData('/api/hoauser/logout')
-      .then((ok) => {
+      .then(({ ok }) => {
         if (ok) {
-          global.setHoaUser({});
-          global.setNeedsEmailValidation(false);
+          global.loadHoaUser({});
         }
       })
       .catch((e) => {

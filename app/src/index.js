@@ -3,9 +3,8 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import './index.css';
 import App, { appLoader } from './App';
 import ErrorPage from './ErrorPage';
-import Content from './Content';
+import Content, { emailLoader } from './Content';
 import GlobalContext from './Global';
-import ValidateEmail from './ValidateEmail';
 import { StrictMode } from 'react';
 
 const router = createBrowserRouter([
@@ -21,7 +20,8 @@ const router = createBrowserRouter([
       },
       {
         path: 'validate-email/:token',
-        element: <ValidateEmail />,
+        element: <Content />,
+        loader: emailLoader,
       },
     ],
   },

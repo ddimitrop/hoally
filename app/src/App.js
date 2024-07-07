@@ -33,6 +33,8 @@ const theme = createTheme({
   },
 });
 
+let hoaUserLoaded = false;
+
 export default function App() {
   const global = useContext(Global);
 
@@ -40,14 +42,14 @@ export default function App() {
   // not a user yet.
   const { hoaUser, error } = useLoaderData();
   useEffect(() => {
+    if (!hoaUserLoaded) return;
+    hoaUserLoaded = false;
     if (error) {
       global.setAppError(`Server error ${error}`);
     } else if (hoaUser) {
-      if (!hoaUser.email_validated) {
-        global.setNeedsEmailValidation(true);
-      }
-      global.setHoaUser(hoaUser);
+      global.loadHoaUser(hoaUser);
     }
+    // We just ignore appErrors like no/invalid auth cookie
   });
 
   return (
@@ -64,11 +66,11 @@ export default function App() {
   );
 }
 
-export async function appLoader() {
+export async function appLoader({ params }) {
+  hoaUserLoaded = true;
   try {
-    const hoaUser = await getData('/api/hoauser');
-    return { hoaUser };
-  } catch (e) {
-    return { error: e.message };
+    return await getData('/api/hoauser');
+  } catch ({ message: error }) {
+    return { error };
   }
 }
