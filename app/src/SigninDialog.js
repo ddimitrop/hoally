@@ -20,7 +20,7 @@ const SinginDialog = (props) => {
   }
 
   function exceptionMessage(e) {
-    setErrorMessage(`There was a problem: "${e.message}" - please try again.`);
+    setErrorMessage(`There was a problem: "${e.message}".`);
   }
 
   async function signin(url, event) {
@@ -38,9 +38,14 @@ const SinginDialog = (props) => {
         onSubmit: (event) => {
           event.preventDefault();
           signin('/api/hoauser/signin', event)
-            .then((hoaUser) => {
-              global.setHoaUser(hoaUser);
-              close();
+            .then(({ hoaUser, appError }) => {
+              if (hoaUser) {
+                global.loadHoaUser(hoaUser);
+                close();
+              } else {
+                setErrorMessage(appError);
+                // TODO (recover);
+              }
             })
             .catch((e) => {
               exceptionMessage(e);

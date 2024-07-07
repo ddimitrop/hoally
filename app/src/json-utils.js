@@ -1,4 +1,4 @@
-const NULL_VALUE = String(null);
+import { isAppError } from './errors';
 
 export async function getData(url) {
   const response = await fetch(url, {
@@ -11,10 +11,10 @@ export async function getData(url) {
     throw Error(`${response.statusText}`);
   }
   const responseData = await response.json();
-  if (responseData.error) {
-    throw Error(`${responseData.error}`);
+  const { error } = responseData;
+  if (error && !isAppError(error)) {
+    throw Error(`${error}`);
   }
-  if (responseData === NULL_VALUE) return null;
   return responseData;
 }
 
@@ -33,9 +33,15 @@ export async function postData(url, data) {
     throw Error(`${response.statusText}`);
   }
   const responseData = await response.json();
-  if (responseData.error) {
-    throw Error(`${responseData.error}`);
+  const { error } = responseData;
+  if (error && !isAppError(error)) {
+    throw Error(`${error}`);
   }
-  if (responseData === NULL_VALUE) return null;
   return responseData;
+}
+
+export async function postForm(url, event) {
+  const formData = new FormData(event.currentTarget);
+  const formJson = Object.fromEntries(formData.entries());
+  return postData(url, formJson);
 }

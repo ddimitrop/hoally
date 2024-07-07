@@ -14,14 +14,14 @@ import Icon from '@mui/material/Icon';
 import ListItemText from '@mui/material/ListItemText';
 
 import { useState, Fragment, useContext } from 'react';
-import { Global } from './Global.js';
+import { Global } from './Global';
 import { getData } from './json-utils.js';
 import { flagState } from './state-utils.js';
 
 import './TopBar.css';
 import './SignupDialog.js';
-import SingupDialog from './SignupDialog.js';
-import SinginDialog from './SigninDialog.js';
+import SingupDialog from './SignupDialog';
+import SinginDialog from './SigninDialog';
 
 const TopBar = () => {
   const [drawerOpen, toggleDrawer] = useState(false);
@@ -31,9 +31,9 @@ const TopBar = () => {
 
   const logout = function () {
     getData('/api/hoauser/logout')
-      .then((ok) => {
+      .then(({ ok }) => {
         if (ok) {
-          global.setHoaUser({});
+          global.loadHoaUser({});
         }
       })
       .catch((e) => {

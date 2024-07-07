@@ -1,20 +1,37 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import './index.css';
-import App from './App';
+import App, { appLoader } from './App';
+import ErrorPage from './ErrorPage';
+import Content, { emailLoader } from './Content';
+import GlobalContext from './Global';
+import { StrictMode } from 'react';
 
 const router = createBrowserRouter([
   {
     path: '/',
     element: <App />,
-    children: [],
+    loader: appLoader,
+    errorElement: <ErrorPage />,
+    children: [
+      {
+        path: '',
+        element: <Content />,
+      },
+      {
+        path: 'validate-email/:token',
+        element: <Content />,
+        loader: emailLoader,
+      },
+    ],
   },
 ]);
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const root = createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
-    <RouterProvider router={router} />
-  </React.StrictMode>,
+  <GlobalContext>
+    <StrictMode>
+      <RouterProvider router={router} />
+    </StrictMode>
+  </GlobalContext>,
 );

@@ -1,16 +1,30 @@
-import { createContext } from 'react';
+import { createContext, useState } from 'react';
 
-// The global state instance that components can use to expose global states
-// to the whole app.
-export const global = {
-  setters: {},
-  get: (name) => global[name],
-  set: (name, value) => global.setters[name](value),
-  addState: (state, name) => {
-    const [value, setter] = state;
-    global[name] = value;
-    global.setters[name] = setter;
-    global[`set${name[0].toUpperCase() + name.slice(1)}`] = setter;
-  },
-};
-export const Global = createContext(global);
+export const Global = createContext();
+
+export default function GlobalContext({ children }) {
+  const [hoaUser, setHoaUser] = useState({});
+  const [appError, setAppError] = useState('');
+  const [needsEmailValidation, setNeedsEmailValidation] = useState(false);
+
+  function loadHoaUser(hoaUser) {
+    setHoaUser(hoaUser);
+    setNeedsEmailValidation(hoaUser.email_validated === false);
+  }
+
+  return (
+    <Global.Provider
+      value={{
+        hoaUser,
+        setHoaUser,
+        loadHoaUser,
+        appError,
+        setAppError,
+        needsEmailValidation,
+        setNeedsEmailValidation,
+      }}
+    >
+      {children}
+    </Global.Provider>
+  );
+}

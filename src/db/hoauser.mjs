@@ -1,3 +1,13 @@
+import {
+  AppError,
+  NO_AUTHENTICATION_COOKIE,
+  EMAIL_ALREADY_USED,
+  LOGIN_ERROR,
+  ACCESS_TOKEN_INVALID,
+  EMAIL_NOT_REGISTERED,
+  handleErrors,
+} from '../../app/src/errors.mjs';
+
 /**
  * A user of the Hoally site. It can be a member of 0 to MAX_USER_COMMUNITIES.
  */
@@ -43,7 +53,7 @@ export class HoaUser {
     if (email === this.data.email) return;
     const emailUsed = await HoaUser.emailUsed(this.connection, email);
     if (emailUsed) {
-      throw new Error('Email used');
+      throw new AppError(EMAIL_ALREADY_USED);
     }
     const { sql, crypto } = this.connection;
     await sql`
@@ -131,7 +141,7 @@ export class HoaUser {
       where hashed_name = ${hashedName}
       and hashed_password = ${hashedPassword}`;
     if (data.length !== 1) {
-      throw new Error('Login error');
+      throw new AppError(LOGIN_ERROR);
     }
     return new HoaUser(connection, data[0]);
   }
@@ -147,7 +157,7 @@ export class HoaUser {
       where hashed_token = ${crypto.hash(token)}
       and now() - token_creation_timestamp < cast(${tokenExpiration} AS INTERVAL)`;
     if (data.length !== 1) {
-      throw new Error('Access token invalid');
+      throw new AppError(ACCESS_TOKEN_INVALID);
     }
     return new HoaUser(connection, data[0]);
   }
@@ -156,15 +166,15 @@ export class HoaUser {
     return [crypto.hash(name), crypto.hash(password)];
   }
 
-  static async forgotPassword(connection, email) {
+  static async getToken(connection, email) {
     const emailUsed = await HoaUser.emailUsed(connection, email);
     if (!emailUsed) {
-      throw new Error('Not used email');
+      throw new AppError(EMAIL_NOT_REGISTERED);
     }
-    return HoaUser.getToken(connection, email);
+    return HoaUser.updateToken(connection, email);
   }
 
-  static async getToken(connection, email) {
+  static async updateToken(connection, email) {
     const { sql, crypto } = connection;
     const token = crypto.uuid();
     const hashedToken = crypto.hash(token);
@@ -185,107 +195,148 @@ const TOKEN_EXPIRATION = '12:00:00';
 
 const AUTH_COOKIE = 'HAU';
 
-const NULL_VALUE = String(null);
-
 /** Loads and returns the user using the authentication cookie. */
 export function hoaUserApi(connection, app) {
-  app.get('/api/hoauser', async (req, res) => {
-    const {
-      headers: { cookie },
-    } = req;
-    if (!cookie) {
-      res.json(NULL_VALUE);
-      return;
-    }
+  function parseCookie(cookie) {
     const authCookie = cookie
       .split(';')
       .map((c) => c.split('='))
       .find((p) => p && p.length === 2 && p[0] === AUTH_COOKIE);
-    if (!authCookie) {
-      res.json(NULL_VALUE);
-      return;
-    }
     const auth = authCookie[1];
     const credentials = auth.split('-');
     if (credentials.length != 2) {
-      res.json(NULL_VALUE);
-      return;
+      throw Error();
     }
-    try {
-      const hoaUser = await HoaUser.get(connection, credentials);
-      res.json(hoaUser.getData());
-    } catch (e) {
-      if (e.message === 'Login error') {
-        res.json(NULL_VALUE);
-      } else {
-        res.json({ error: e.message });
-      }
-    }
-  });
+    return credentials;
+  }
 
-  /** Clears up the authentication cookie. */
-  app.get('/api/hoauser/logout', async (req, res) => {
-    res.clearCookie(AUTH_COOKIE);
-    res.json(true);
-  });
+  function setCookie(res, credentials) {
+    const auth = credentials.join('-');
+    res.cookie(AUTH_COOKIE, auth, { httpOnly: true });
+  }
+
+  function getCredentials(name, password) {
+    return HoaUser.loginCredentials(connection.crypto, name, password);
+  }
+
+  async function authenticate(req) {
+    const {
+      headers: { cookie },
+    } = req;
+    let credentials;
+    try {
+      credentials = parseCookie(cookie);
+    } catch {
+      throw new AppError(NO_AUTHENTICATION_COOKIE);
+    }
+    return await HoaUser.get(connection, credentials);
+  }
+
+  async function tokenEmail(req, res, subject, description, path) {
+    // Doesn't require authentication because its is also use for recovery emails.
+    const { email } = req.body;
+    const token = await HoaUser.getToken(connection, email);
+    await connection.sendMail(
+      email,
+      subject,
+      `${description} by following <a href="${req.headers.origin}/${path}/${token}"> this link</a>.`,
+    );
+    res.json({ token });
+  }
+
+  app.get(
+    '/api/hoauser',
+    handleErrors(async (req, res) => {
+      const hoaUserInst = await authenticate(req);
+      const hoaUser = hoaUserInst.getData();
+      res.json({ hoaUser });
+    }),
+  );
 
   /** Signs up an existing user using name/password and sets the authentication cookie. */
-  app.post('/api/hoauser/signin', async (req, res) => {
-    const { name, password } = req.body;
-    try {
-      const credentials = HoaUser.loginCredentials(
-        connection.crypto,
-        name,
-        password,
-      );
-      const hoaUser = await HoaUser.get(connection, credentials);
-      const auth = credentials.join('-');
-      res.cookie(AUTH_COOKIE, auth, { httpOnly: true });
-      res.json(hoaUser.getData());
-    } catch (e) {
-      if (e.message === 'Login error') {
-        res.json(NULL_VALUE);
-      } else {
-        res.json({ error: e.message });
-      }
-    }
-  });
+  app.post(
+    '/api/hoauser/signin',
+    handleErrors(async (req, res) => {
+      const { name, password } = req.body;
+      const credentials = getCredentials(name, password);
+      const hoaUserInst = await HoaUser.get(connection, credentials);
+      const hoaUser = hoaUserInst.getData();
+      setCookie(res, credentials);
+      res.json({ hoaUser });
+    }),
+  );
+
+  /** Clears up the authentication cookie. */
+  app.get(
+    '/api/hoauser/logout',
+    handleErrors(async (req, res) => {
+      res.clearCookie(AUTH_COOKIE);
+      res.json({ ok: true });
+    }),
+  );
 
   /** Creates a new user and sets the authentication cookie. */
-  app.post('/api/hoauser', async (req, res) => {
-    const { name, fullName, email, password } = req.body;
-    try {
-      const hoaUser = await HoaUser.create(
+  app.post(
+    '/api/hoauser',
+    handleErrors(async (req, res) => {
+      const { name, fullName, email, password } = req.body;
+      const hoaUserInst = await HoaUser.create(
         connection,
         name,
         fullName,
         email,
         password,
       );
-      const credentials = HoaUser.loginCredentials(
-        connection.crypto,
-        name,
-        password,
-      );
-      const auth = credentials.join('-');
-      res.cookie(AUTH_COOKIE, auth, { httpOnly: true });
-      res.json(hoaUser.getData());
-    } catch (e) {
-      res.json({ error: e.message });
-    }
-  });
+      const hoaUser = hoaUserInst.getData();
+      const credentials = getCredentials(name, password);
+      setCookie(res, credentials);
+      res.json({ hoaUser });
+    }),
+  );
 
   /** Checks if a user name is already used. */
-  app.post('/api/hoauser/validate/name', async (req, res) => {
-    const { name } = req.body;
-    const result = await HoaUser.nameUsed(connection, name);
-    res.json(!result);
-  });
+  app.post(
+    '/api/hoauser/validate/name',
+    handleErrors(async (req, res) => {
+      const { name } = req.body;
+      const result = await HoaUser.nameUsed(connection, name);
+      res.json({ ok: !result });
+    }),
+  );
 
   /** Checks if an email is already used. */
-  app.post('/api/hoauser/validate/email', async (req, res) => {
-    const { email } = req.body;
-    const result = await HoaUser.emailUsed(connection, email);
-    res.json(!result);
-  });
+  app.post(
+    '/api/hoauser/validate/email',
+    handleErrors(async (req, res) => {
+      const { email } = req.body;
+      const result = await HoaUser.emailUsed(connection, email);
+      res.json({ ok: !result });
+    }),
+  );
+
+  /** Generates a token for a user and sends the email for validation. */
+  app.post(
+    '/api/hoauser/email/validation',
+    handleErrors(async (req, res) => {
+      tokenEmail(
+        req,
+        res,
+        'Please validate your HOAlly account',
+        'Validate your HOAlly account',
+        'validate-email',
+      );
+    }),
+  );
+
+  /* Validates a user email usign a token */
+  app.post(
+    '/api/hoauser/confirm/email',
+    handleErrors(async (req, res) => {
+      const { token } = req.body;
+      const hoaUserIns = await HoaUser.getWithToken(connection, token);
+      hoaUserIns.validateEmail();
+      const hoaUser = hoaUserIns.getData();
+      res.json({ hoaUser });
+    }),
+  );
 }
