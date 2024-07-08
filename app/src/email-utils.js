@@ -5,3 +5,9 @@ export async function sendValidationEmail(email) {
     email,
   });
 }
+
+export async function sendRecoverEmail(email) {
+  return postData('/api/hoauser/email/recover', {
+    email,
+  });
+}

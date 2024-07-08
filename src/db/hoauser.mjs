@@ -253,6 +253,20 @@ export function hoaUserApi(connection, app) {
     }),
   );
 
+  app.post(
+    '/api/hoauser/recover',
+    handleErrors(async (req, res) => {
+      const { token, password } = req.body;
+      const hoaUserInst = await HoaUser.getWithToken(connection, token);
+      await hoaUserInst.updatePassword(password);
+      const hoaUser = hoaUserInst.getData();
+      const { name } = hoaUser;
+      const credentials = getCredentials(name, password);
+      setCookie(res, credentials);
+      res.json({ hoaUser });
+    }),
+  );
+
   /** Signs up an existing user using name/password and sets the authentication cookie. */
   app.post(
     '/api/hoauser/signin',
@@ -318,7 +332,7 @@ export function hoaUserApi(connection, app) {
   app.post(
     '/api/hoauser/email/validation',
     handleErrors(async (req, res) => {
-      tokenEmail(
+      await tokenEmail(
         req,
         res,
         'Please validate your HOAlly account',
@@ -334,9 +348,23 @@ export function hoaUserApi(connection, app) {
     handleErrors(async (req, res) => {
       const { token } = req.body;
       const hoaUserIns = await HoaUser.getWithToken(connection, token);
-      hoaUserIns.validateEmail();
+      await hoaUserIns.validateEmail();
       const hoaUser = hoaUserIns.getData();
       res.json({ hoaUser });
+    }),
+  );
+
+  /** Generates a token for a user and sends the email for validation. */
+  app.post(
+    '/api/hoauser/email/recover',
+    handleErrors(async (req, res) => {
+      await tokenEmail(
+        req,
+        res,
+        'Access your HOAlly account',
+        'Change your lost HOAlly account password',
+        'recover-account',
+      );
     }),
   );
 }

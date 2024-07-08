@@ -9,8 +9,10 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Snackbar from '@mui/material/Snackbar';
 import { useState, useContext, Fragment } from 'react';
 import { Global } from './Global.js';
-import { postData, postForm } from './json-utils.js';
-import { sendValidationEmail } from './email-utils.js';
+import { postData, formData } from './json-utils.js';
+import { sendValidationEmail, sendRecoverEmail } from './email-utils.js';
+
+const invalidFields = {};
 
 const SingupDialog = (props) => {
   const { control } = props;
@@ -19,7 +21,6 @@ const SingupDialog = (props) => {
   let [errorSeverity, setErrorSeverity] = useState('error');
   let [nameError, setNameError] = useState(false);
   let [emailError, setEmailError] = useState(false);
-  let [invalidFields, setInvalidFields] = useState({});
   let [signupSuccess, setSignupSuccess] = useState(false);
   const closeSignupSuccess = () => setSignupSuccess(false);
 
@@ -39,40 +40,89 @@ const SingupDialog = (props) => {
     control.close();
   }
 
-  function exceptionMessage(e) {
-    setErrorMessage(`There was a problem: "${e.message}" - please try again.`);
+  function exceptionMessage({ message }) {
+    setErrorMessage(`There was a problem: "${message}" - please try again.`);
   }
 
-  function checkAlreadyUsed(field, label, callback) {
-    return (event) => {
-      const value = event.currentTarget.value;
-      if (!value) return true;
-      invalidFields[field] = value;
-      setInvalidFields(invalidFields);
-      postData(`/api/hoauser/validate/${field}`, { [field]: value })
-        .then(({ ok }) => {
-          if (!ok) {
-            setErrorSeverity('error');
-            setErrorMessage(`There is already an account with this ${label}.`);
-            callback(true);
-          } else {
-            callback(false);
-          }
-        })
-        .catch((e) => {
-          exceptionMessage(e);
+  async function checkField(field, label, value) {
+    invalidFields[field] = value;
+    try {
+      const { ok } = await postData(`/api/hoauser/validate/${field}`, {
+        [field]: value,
+      });
+      if (!ok) {
+        setErrorSeverity('error');
+        setErrorMessage(`There is already an account with this ${label}.`);
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      exceptionMessage(e);
+    }
+  }
+
+  function checkNameField(value) {
+    if (!value) return;
+    return checkField('name', 'nickname', value).then(
+      (ok) => setNameError(ok) || ok,
+    );
+  }
+
+  function checkEmailField(value) {
+    if (!value) return;
+    return checkField('email', 'email', value).then(
+      (ok) => setEmailError(ok) || ok,
+    );
+  }
+
+  async function ensureNotAlreadyUsed(data) {
+    // It is possible to submit the form without onBlur
+    // when using autocomplete
+    let nameUsed = false;
+    let emailUsed = false;
+    const { email: checkedEmail, name: checkedName } = invalidFields;
+    const { email, name } = data;
+
+    if (checkedName !== name) {
+      nameUsed = await checkNameField(name);
+    }
+    if (checkedEmail !== email) {
+      emailUsed = await checkEmailField(email);
+    }
+    return !nameUsed && !emailUsed;
+  }
+
+  function register(data) {
+    ensureNotAlreadyUsed(data)
+      .then((ok) => {
+        if (!ok || nameError || emailError) return;
+        return postData('/api/hoauser', data).then(({ hoaUser }) => {
+          global.setHoaUser(hoaUser);
+          close();
+          sendValidationEmail(hoaUser.email)
+            .then(() => {
+              setSignupSuccess(true);
+            })
+            .catch((e) => {
+              global.setAppError(e.message);
+            });
         });
-    };
+      })
+      .catch((e) => {
+        exceptionMessage(e);
+      });
   }
 
   function recoverAccount() {
-    // TO DO
-    postData('/hoauser/recover', invalidFields['email']).then((ok) => {
-      if (ok) {
+    sendRecoverEmail(invalidFields['email'])
+      .then(() => {
         setErrorMessage('Checkout of your emails for a recovery link.');
-        setErrorSeverity('success');
-      }
-    });
+        setErrorSeverity('info');
+      })
+      .catch((e) => {
+        exceptionMessage(e);
+      });
   }
 
   return (
@@ -80,26 +130,13 @@ const SingupDialog = (props) => {
       <Dialog
         open={control.isOpen()}
         onClose={close}
+        scroll="body"
         PaperProps={{
           component: 'form',
           onSubmit: (event) => {
             event.preventDefault();
-            if (nameError || emailError) return;
-            postForm('/api/hoauser', event)
-              .then(({ hoaUser }) => {
-                global.setHoaUser(hoaUser);
-                close();
-                sendValidationEmail(hoaUser.email)
-                  .then(() => {
-                    setSignupSuccess(true);
-                  })
-                  .catch((e) => {
-                    global.setAppError(e.message);
-                  });
-              })
-              .catch((e) => {
-                exceptionMessage(e);
-              });
+            const data = formData(event);
+            register(data);
           },
         }}
       >
@@ -118,7 +155,7 @@ const SingupDialog = (props) => {
             autoComplete="first-name"
             error={nameError}
             onChange={clearNameError}
-            onBlur={checkAlreadyUsed('name', 'nickname', setNameError)}
+            onBlur={(event) => checkNameField(event.currentTarget.value)}
           />
           <TextField
             margin="dense"
@@ -141,7 +178,7 @@ const SingupDialog = (props) => {
             autoComplete="email"
             error={emailError}
             onChange={clearEmailError}
-            onBlur={checkAlreadyUsed('email', 'email', setEmailError)}
+            onBlur={(event) => checkEmailField(event.currentTarget.value)}
           />
           <TextField
             required
@@ -170,7 +207,7 @@ const SingupDialog = (props) => {
             }}
             onClick={recoverAccount}
           >
-            Recover account
+            Forgot password
           </Button>
           <Button onClick={close}>Cancel</Button>
           <Button type="submit">Subscribe</Button>
