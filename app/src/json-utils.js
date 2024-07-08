@@ -40,8 +40,7 @@ export async function postData(url, data) {
   return responseData;
 }
 
-export async function postForm(url, event) {
+export function formData(event) {
   const formData = new FormData(event.currentTarget);
-  const formJson = Object.fromEntries(formData.entries());
-  return postData(url, formJson);
+  return Object.fromEntries(formData.entries());
 }

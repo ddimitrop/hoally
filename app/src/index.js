@@ -4,6 +4,7 @@ import './index.css';
 import App, { appLoader } from './App';
 import ErrorPage from './ErrorPage';
 import Content, { emailLoader } from './Content';
+import RecoverAccount from './RecoverAccount';
 import GlobalContext from './Global';
 import { StrictMode } from 'react';
 
@@ -22,6 +23,10 @@ const router = createBrowserRouter([
         path: 'validate-email/:token',
         element: <Content />,
         loader: emailLoader,
+      },
+      {
+        path: 'recover-account/:token',
+        element: <RecoverAccount />,
       },
     ],
   },
