@@ -308,6 +308,32 @@ export function hoaUserApi(connection, app) {
     }),
   );
 
+  /** Updates a new user and may set a new authentication cookie. */
+  app.put(
+    '/api/hoauser',
+    handleErrors(async (req, res) => {
+      let hoaUserInst = await authenticate(req);
+      let hoaUser = hoaUserInst.getData();
+      const { fullName, email, password } = req.body;
+      if (fullName !== hoaUser.full_name) {
+        await hoaUserInst.updateFullName(fullName);
+      }
+      if (email !== hoaUser.email) {
+        await hoaUserInst.updateEmail(email);
+      }
+      if (password) {
+        await hoaUserInst.updatePassword(password);
+        const credentials = getCredentials(hoaUser.name, password);
+        setCookie(res, credentials);
+        hoaUserInst = await HoaUser.get(connection, credentials);
+      } else {
+        hoaUserInst = await authenticate(req);
+      }
+      hoaUser = hoaUserInst.getData();
+      res.json({ hoaUser });
+    }),
+  );
+
   /** Checks if a user name is already used. */
   app.post(
     '/api/hoauser/validate/name',

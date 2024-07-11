@@ -18,9 +18,9 @@ export async function getData(url) {
   return responseData;
 }
 
-export async function postData(url, data) {
+export async function postData(url, data, method = 'POST') {
   const response = await fetch(url, {
-    method: 'POST',
+    method,
     headers: {
       'Content-Type': 'application/json',
     },

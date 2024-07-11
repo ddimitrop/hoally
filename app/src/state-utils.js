@@ -16,3 +16,13 @@ export function valueState(state) {
     set: (newValue) => setValue(newValue),
   };
 }
+
+export function formCapture(selector = 'input') {
+  const values = {};
+  return {
+    provide: (node, name) => {
+      values[name] = () => node.querySelector(selector).value;
+    },
+    get: (name) => values[name]?.(),
+  };
+}
