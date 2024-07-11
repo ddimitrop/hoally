@@ -73,7 +73,7 @@ const Content = () => {
               >
                 <CloseIcon fontSize="small" />
               </IconButton>
-            ) : (
+            ) : global.hoaUser.email ? (
               <Button
                 color="inherit"
                 size="small"
@@ -81,6 +81,8 @@ const Content = () => {
               >
                 Send again
               </Button>
+            ) : (
+              ''
             )
           }
         >

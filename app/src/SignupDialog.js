@@ -11,27 +11,78 @@ import { useState, useContext, Fragment } from 'react';
 import { Global } from './Global.js';
 import { postData, formData } from './json-utils.js';
 import { sendValidationEmail, sendRecoverEmail } from './email-utils.js';
+import { formCapture } from './state-utils.js';
 
-const invalidFields = {};
+export function useAlreadyUsedCheck(field, label, onUsed, onException) {
+  let [error, setError] = useState(false);
+  // Last checked value and result for caching.
+  let value, isUsed;
 
-const SingupDialog = (props) => {
-  const { control } = props;
+  async function check(newValue) {
+    if (!newValue) return true;
+    if (value === newValue) return isUsed;
+    value = newValue;
+    try {
+      const { ok } = await postData(`/api/hoauser/validate/${field}`, {
+        [field]: value,
+      });
+      isUsed = !ok;
+      if (isUsed) {
+        onUsed({ field, label, value });
+      }
+      setError(isUsed);
+      return isUsed;
+    } catch (e) {
+      onException(e);
+      return true;
+    }
+  }
+
+  return {
+    hasError: () => error,
+    check,
+    clearError: () => {
+      setError(false);
+    },
+  };
+}
+
+const SingupDialog = ({ control }) => {
   const global = useContext(Global);
   let [errorMessage, setErrorMessage] = useState('');
   let [errorSeverity, setErrorSeverity] = useState('error');
-  let [nameError, setNameError] = useState(false);
-  let [emailError, setEmailError] = useState(false);
   let [signupSuccess, setSignupSuccess] = useState(false);
   const closeSignupSuccess = () => setSignupSuccess(false);
 
+  const form = formCapture();
+
+  const onUsedField = ({ label }) => {
+    setErrorSeverity('error');
+    setErrorMessage(`There is already an account with this ${label}.`);
+  };
+
+  const emailUsed = useAlreadyUsedCheck(
+    'email',
+    'email',
+    onUsedField,
+    exceptionMessage,
+  );
+
+  const nameUsed = useAlreadyUsedCheck(
+    'name',
+    'nickname',
+    onUsedField,
+    exceptionMessage,
+  );
+
   function clearNameError() {
     setErrorMessage('');
-    setNameError(false);
+    nameUsed.clearError();
   }
 
   function clearEmailError() {
     setErrorMessage('');
-    setEmailError(false);
+    emailUsed.clearError();
   }
 
   function close() {
@@ -44,59 +95,20 @@ const SingupDialog = (props) => {
     setErrorMessage(`There was a problem: "${message}" - please try again.`);
   }
 
-  async function checkField(field, label, value) {
-    invalidFields[field] = value;
-    try {
-      const { ok } = await postData(`/api/hoauser/validate/${field}`, {
-        [field]: value,
-      });
-      if (!ok) {
-        setErrorSeverity('error');
-        setErrorMessage(`There is already an account with this ${label}.`);
-        return true;
-      } else {
-        return false;
-      }
-    } catch (e) {
-      exceptionMessage(e);
-    }
-  }
-
-  function checkNameField(value) {
-    if (!value) return;
-    return checkField('name', 'nickname', value).then(
-      (ok) => setNameError(ok) || ok,
-    );
-  }
-
-  function checkEmailField(value) {
-    if (!value) return;
-    return checkField('email', 'email', value).then(
-      (ok) => setEmailError(ok) || ok,
-    );
-  }
-
   async function ensureNotAlreadyUsed(data) {
     // It is possible to submit the form without onBlur
     // when using autocomplete
-    let nameUsed = false;
-    let emailUsed = false;
-    const { email: checkedEmail, name: checkedName } = invalidFields;
     const { email, name } = data;
+    const nameOk = !(await nameUsed.check(name));
+    const emailOK = !(await emailUsed.check(email));
 
-    if (checkedName !== name) {
-      nameUsed = await checkNameField(name);
-    }
-    if (checkedEmail !== email) {
-      emailUsed = await checkEmailField(email);
-    }
-    return !nameUsed && !emailUsed;
+    return nameOk && emailOK;
   }
 
   function register(data) {
     ensureNotAlreadyUsed(data)
       .then((ok) => {
-        if (!ok || nameError || emailError) return;
+        if (!ok || nameUsed.hasError() || emailUsed.hasError()) return;
         return postData('/api/hoauser', data).then(({ hoaUser }) => {
           global.setHoaUser(hoaUser);
           close();
@@ -115,7 +127,7 @@ const SingupDialog = (props) => {
   }
 
   function recoverAccount() {
-    sendRecoverEmail(invalidFields['email'])
+    sendRecoverEmail(form.get('email'))
       .then(() => {
         setErrorMessage('Checkout of your emails for a recovery link.');
         setErrorSeverity('info');
@@ -153,9 +165,9 @@ const SingupDialog = (props) => {
             fullWidth
             variant="standard"
             autoComplete="first-name"
-            error={nameError}
+            error={nameUsed.hasError()}
             onChange={clearNameError}
-            onBlur={(event) => checkNameField(event.currentTarget.value)}
+            onBlur={(event) => nameUsed.check(event.currentTarget.value)}
           />
           <TextField
             margin="dense"
@@ -176,9 +188,10 @@ const SingupDialog = (props) => {
             fullWidth
             variant="standard"
             autoComplete="email"
-            error={emailError}
+            error={emailUsed.hasError()}
             onChange={clearEmailError}
-            onBlur={(event) => checkEmailField(event.currentTarget.value)}
+            onBlur={(event) => emailUsed.check(event.currentTarget.value)}
+            ref={(node) => form.provide(node, 'email')}
           />
           <TextField
             required
@@ -203,7 +216,7 @@ const SingupDialog = (props) => {
         <DialogActions>
           <Button
             sx={{
-              display: emailError ? 'inline-block' : 'none',
+              display: emailUsed.hasError() ? 'inline-block' : 'none',
             }}
             onClick={recoverAccount}
           >
