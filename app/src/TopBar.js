@@ -25,7 +25,7 @@ const TopBar = () => {
 
   return (
     <Fragment>
-      <AppBar position="static">
+      <AppBar position="sticky">
         <Toolbar>
           <IconButton
             size="large"

@@ -10,6 +10,7 @@ import { sendValidationEmail } from './email-utils.js';
 import { postData } from './json-utils.js';
 import { useLoaderData, useNavigate } from 'react-router-dom';
 import { ACCESS_TOKEN_INVALID } from './errors.mjs';
+import MarketingContent from './MarketingContent';
 
 let hoaUserLoaded = false;
 
@@ -97,7 +98,14 @@ const Content = () => {
     ) : (
       ''
     );
-  return <Box>{validationWarning}</Box>;
+
+  const marketingContent = global.hoaUser.name ? '' : <MarketingContent />;
+  return (
+    <Box>
+      {validationWarning}
+      {marketingContent}
+    </Box>
+  );
 };
 
 export async function emailLoader({ params }) {
