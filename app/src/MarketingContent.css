@@ -1,0 +1,141 @@
+@keyframes fade {
+  to {
+    opacity: 0.1;
+  }
+}
+
+.main-banner {
+  position: relative;
+  text-align: center;
+  height: 350px;
+  background-image: url('static/houses-banner.jpg');
+  animation-name: fade;
+}
+
+@supports (animation-timeline: view()) {
+  .main-banner {
+    animation-timeline: view();
+    animation-range: exit;
+    animation-timing-function: ease-out;
+  }
+}
+
+.main-banner-text {
+  display: inline-block;
+  margin-top: 180px;
+  font-size: 60px;
+  color: rgb(245, 245, 245);
+  background-color: rgb(14, 30, 37, 0.6);
+  padding-left: 8px;
+}
+
+@media (max-width: 736px) {
+  .main-banner-text {
+    margin-top: 120px;
+  }
+}
+
+@keyframes banner-highlight-bg {
+  from {
+    background-color: rgb(245, 245, 245, 0);
+  }
+}
+
+@keyframes banner-highlight-fg {
+  from {
+    color: rgb(245, 245, 245);
+  }
+}
+
+.main-banner-highlight {
+  background-color: rgb(245, 245, 245, 0.6);
+  color: rgb(14, 30, 37);
+  display: inline-block;
+  padding-right: 8px;
+  padding-left: 10px;
+  animation-duration: 5s, 1s;
+  animation-timing-function: ease-out, ease-out;
+  animation-name: banner-highlight-bg, banner-highlight-fg;
+}
+
+.marketing-text {
+  margin: 16px;
+  margin-left: 64px;
+  font-size: 18px;
+}
+
+.marketing-text p {
+  line-height: 2;
+  margin-bottom: 16px;
+}
+
+.marketing-text h1 {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.marketing-text-note {
+  font-size: 16px;
+  font-style: italic;
+}
+
+.marketing-graphics {
+  height: 200px;
+  background-color: #3e4b50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 64px;
+  animation-name: fade;
+}
+
+@supports (animation-timeline: view()) {
+  .marketing-graphics {
+    animation-timeline: view();
+    animation-range: exit;
+    animation-timing-function: ease-out;
+  }
+}
+
+@media (max-width: 736px) {
+  .marketing-graphics {
+    gap: 8px;
+  }
+}
+
+@media (min-width: 1050px) {
+  .marketing-graphics {
+    gap: 96px;
+  }
+}
+
+.marketing-graphics > div {
+  display: inline-block;
+  height: 150px;
+  width: 150px;
+  font-weight: bold;
+  font-size: 20px;
+  letter-spacing: 2px;
+  padding-top: 100px;
+  text-align: center;
+  color: rgb(245, 245, 245);
+}
+
+.marketing-graphics > div > span {
+  background-color: rgb(14, 30, 37, 0.6);
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.user-graphic {
+  background-image: url('static/user.jpg');
+}
+
+.idea-graphic {
+  background-image: url('static/idea.jpg');
+}
+
+.vote-graphic {
+  background-image: url('static/vote.jpg');
+}
