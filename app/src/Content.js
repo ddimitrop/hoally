@@ -30,7 +30,7 @@ const Content = () => {
       ? 'The validation link has expired. Please send a new one.'
       : validationSuccess
         ? 'Your account has been validated successfully!'
-        : 'Your email has not been validated. Please look for the validation email in your inbox.';
+        : 'Your email has not been validated. Please check out your inbox.';
 
   const closeResendSuccess = () => setResendSuccess(false);
 

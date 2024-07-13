@@ -1,4 +1,5 @@
 import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Dialog from '@mui/material/Dialog';
@@ -6,12 +7,13 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Snackbar from '@mui/material/Snackbar';
+import DeleteAccountDialog from './DeleteAccountDialog';
 import { useAlreadyUsedCheck } from './SignupDialog';
 import { useState, useContext, Fragment } from 'react';
 import { Global } from './Global.js';
 import { postData, formData } from './json-utils.js';
 import { sendValidationEmail } from './email-utils.js';
-import { formCapture } from './state-utils.js';
+import { formCapture, flagState } from './state-utils.js';
 
 const SettingsDialog = ({ control }) => {
   const global = useContext(Global);
@@ -20,6 +22,8 @@ const SettingsDialog = ({ control }) => {
   let [signupSuccess, setSignupSuccess] = useState(false);
 
   let [needValidationEmail, setNeedValidationEmail] = useState(false);
+
+  const deleteDialog = flagState(useState(false));
 
   const previousPassword = '**********';
   let changePassword = (value) => {};
@@ -118,6 +122,11 @@ const SettingsDialog = ({ control }) => {
       });
   }
 
+  function showDeleteAccount() {
+    close();
+    deleteDialog.open();
+  }
+
   return (
     <Fragment>
       <Dialog
@@ -208,6 +217,10 @@ const SettingsDialog = ({ control }) => {
           </Alert>
         </DialogContent>
         <DialogActions>
+          <Button color="error" onClick={showDeleteAccount}>
+            Delete account
+          </Button>
+          <Box sx={{ flex: 1 }}></Box>
           <Button onClick={close}>Cancel</Button>
           <Button type="submit" disabled={!wasChanged}>
             Save
@@ -220,10 +233,11 @@ const SettingsDialog = ({ control }) => {
           severity={needValidationEmail ? 'info' : 'success'}
         >
           {needValidationEmail
-            ? 'Your account changes require email revalidation. Please look for the validation emai in your inbox.'
-            : 'Your accout was changed succesfully!'}
+            ? 'Your account changes require email revalidation. Please check out your inbox.'
+            : 'Your account was changed succesfully!'}
         </Alert>
       </Snackbar>
+      <DeleteAccountDialog control={deleteDialog} />
     </Fragment>
   );
 };

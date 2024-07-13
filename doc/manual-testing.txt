@@ -1,0 +1,22 @@
+1) Sign up dialog all OK
+2) Sign up dialog with name exists
+3) Sign up dialog with email exists
+4) Sign up dialog clicking on recover
+5) Follow the recovery link while unsinged
+6) Follow the recovery link while signed
+7) Follow an expired recovery link while unsigned
+8) Follow an expired recovery link while signed
+8) Follow an expired recovery link and resend
+10) Follow a verification link while unsinged
+11) Follow a verification link while signed
+12) Follow a verification while on a different account
+13) Follow an expired verification link while unsigned
+14) Follow an expired verification link while signed
+15) Logout
+16) Reload with authentication
+17) Reload with wrong authentication
+18) Change settings just name
+19) Change settings just email
+20) Change settings password
+21) Change settings all
+22) Delete an account
