@@ -142,6 +142,8 @@ const SingupDialog = ({ control }) => {
       <Dialog
         open={control.isOpen()}
         onClose={close}
+        fullWidth={true}
+        maxWidth="sm"
         scroll="body"
         PaperProps={{
           component: 'form',
@@ -228,8 +230,8 @@ const SingupDialog = ({ control }) => {
       </Dialog>
       <Snackbar open={signupSuccess} onClose={closeSignupSuccess}>
         <Alert onClose={closeSignupSuccess} severity="info">
-          Your new account requires email validation. Please look for the
-          validation emai in your inbox.
+          Your new account requires email validation. Please check out your
+          inbox.
         </Alert>
       </Snackbar>
     </Fragment>

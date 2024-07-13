@@ -47,11 +47,11 @@ const MarketingContent = () => {
           where available, residents&apos; email addresses. When emails are not
           known, HOAlly can generate invitation letters to streamline resident
           registration.
-          <div className="marketing-text-note">
-            Note: All information about community members and their posts is
-            strictly private to community members, and personal information is
-            stored in encrypted form.
-          </div>
+          <br />
+          <span className="marketing-text-note">
+            Note: Posts and other information are restricted to community
+            members, and personal details are encrypted..
+          </span>
         </p>
         <p>
           Once residents register, they can also post proposals, feedback, and

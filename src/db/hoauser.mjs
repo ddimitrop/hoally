@@ -334,6 +334,16 @@ export function hoaUserApi(connection, app) {
     }),
   );
 
+  /** Deletes a user. */
+  app.delete(
+    '/api/hoauser',
+    handleErrors(async (req, res) => {
+      const hoaUserInst = await authenticate(req);
+      await hoaUserInst.unregister();
+      res.json({ ok: true });
+    }),
+  );
+
   /** Checks if a user name is already used. */
   app.post(
     '/api/hoauser/validate/name',

@@ -9,7 +9,6 @@ import { useState, useContext, Fragment } from 'react';
 import { Global } from './Global.js';
 import { postData, formData } from './json-utils.js';
 import { LOGIN_ERROR } from './errors.mjs';
-import { FormControl } from '@mui/material';
 import RecoveryDialog from './RecoveryDialog.js';
 
 const SinginDialog = (props) => {
@@ -61,6 +60,8 @@ const SinginDialog = (props) => {
       <Dialog
         open={!showRecoverDialog && control.isOpen()}
         onClose={close}
+        fullWidth={true}
+        maxWidth="xs"
         PaperProps={{
           component: 'form',
           onSubmit: (event) => {
@@ -72,30 +73,28 @@ const SinginDialog = (props) => {
       >
         <DialogTitle>Sign in</DialogTitle>
         <DialogContent>
-          <FormControl sx={{ minWidth: '350px' }}>
-            <TextField
-              autoFocus
-              required
-              margin="dense"
-              id="name"
-              name="name"
-              label="Nickname"
-              fullWidth
-              variant="standard"
-              autoComplete="first-name"
-            />
-            <TextField
-              required
-              margin="dense"
-              id="password"
-              name="password"
-              label="Password"
-              type="password"
-              fullWidth
-              variant="standard"
-              autoComplete="new-password"
-            />
-          </FormControl>
+          <TextField
+            autoFocus
+            required
+            margin="dense"
+            id="name"
+            name="name"
+            label="Nickname"
+            fullWidth
+            variant="standard"
+            autoComplete="first-name"
+          />
+          <TextField
+            required
+            margin="dense"
+            id="password"
+            name="password"
+            label="Password"
+            type="password"
+            fullWidth
+            variant="standard"
+            autoComplete="new-password"
+          />
           <Alert
             sx={{
               visibility: errorMessage ? 'visible' : 'hidden',
