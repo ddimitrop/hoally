@@ -5,10 +5,10 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import { useState, useContext } from 'react';
+import { useState, useContext, Fragment } from 'react';
 import { Global } from './Global.js';
 import { formData } from './json-utils.js';
-import { FormControl } from '@mui/material';
+import Snackbar from '@mui/material/Snackbar';
 import { sendRecoverEmail } from './email-utils.js';
 import { EMAIL_NOT_REGISTERED } from './errors.mjs';
 
@@ -17,9 +17,9 @@ const RecoveryDialog = (props) => {
   const global = useContext(Global);
   let [emailSent, setEmailSent] = useState(false);
   let [unknownEmail, setUnknownEmail] = useState(false);
+  let closeEmailSend = () => setEmailSent(false);
 
   function close() {
-    setEmailSent(false);
     setUnknownEmail(false);
     control.close();
   }
@@ -30,8 +30,10 @@ const RecoveryDialog = (props) => {
       .then(({ appError }) => {
         if (appError === EMAIL_NOT_REGISTERED) {
           setUnknownEmail(true);
+        } else {
+          close();
+          setEmailSent(true);
         }
-        setEmailSent(true);
       })
       .catch(({ message }) => {
         global.setAppError(message);
@@ -39,21 +41,23 @@ const RecoveryDialog = (props) => {
   }
 
   return (
-    <Dialog
-      open={control.isOpen()}
-      onClose={close}
-      PaperProps={{
-        component: 'form',
-        onSubmit: (event) => {
-          event.preventDefault();
-          const data = formData(event);
-          recoverAccount(data);
-        },
-      }}
-    >
-      <DialogTitle>Recover account</DialogTitle>
-      <DialogContent>
-        <FormControl sx={{ minWidth: '350px' }}>
+    <Fragment>
+      <Dialog
+        open={control.isOpen()}
+        onClose={close}
+        fullWidth={true}
+        maxWidth="xs"
+        PaperProps={{
+          component: 'form',
+          onSubmit: (event) => {
+            event.preventDefault();
+            const data = formData(event);
+            recoverAccount(data);
+          },
+        }}
+      >
+        <DialogTitle>Recover account</DialogTitle>
+        <DialogContent>
           <TextField
             required
             margin="dense"
@@ -65,23 +69,32 @@ const RecoveryDialog = (props) => {
             variant="standard"
             autoComplete="email"
           />
-        </FormControl>
-        <Alert
-          sx={{
-            visibility: emailSent ? 'visible' : 'hidden',
-            flexGrow: '1',
-          }}
-          severity={unknownEmail ? 'error' : 'info'}
-          onClose={close}
-        >
-          {unknownEmail ? 'Email not registered.' : 'Recovery email sent.'}
+          <Alert
+            sx={{
+              visibility: unknownEmail ? 'visible' : 'hidden',
+              flexGrow: '1',
+            }}
+            severity="error"
+            onClose={close}
+          >
+            Email not registered.
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={close}>Cancel</Button>
+          <Button type="submit">Send recovery email</Button>
+        </DialogActions>
+      </Dialog>
+      <Snackbar
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        open={emailSent}
+        onClose={closeEmailSend}
+      >
+        <Alert onClose={closeEmailSend} severity="info">
+          Recovery email sent
         </Alert>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={close}>Cancel</Button>
-        <Button type="submit">Send recovery email</Button>
-      </DialogActions>
-    </Dialog>
+      </Snackbar>
+    </Fragment>
   );
 };
 

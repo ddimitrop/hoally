@@ -13,6 +13,7 @@ import { useContext, useState, Fragment } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { postData, formData } from './json-utils.js';
 import { ACCESS_TOKEN_INVALID } from './errors.mjs';
+import MarketingContent from './MarketingContent';
 
 const RecoverAccount = () => {
   const global = useContext(Global);
@@ -25,14 +26,14 @@ const RecoverAccount = () => {
 
   function close() {
     setChangePassword(false);
+    navigate('/');
   }
 
   function finish() {
-    setChangePassword(false);
     setPasswordChanged(false);
     setInvalidToken(false);
     setShowRecoveryDialog(false);
-    navigate('/');
+    close();
   }
 
   function setNewPassword(token, password) {
@@ -70,6 +71,8 @@ const RecoverAccount = () => {
       <Dialog
         open={changePassword}
         onClose={close}
+        fullWidth={true}
+        maxWidth="xs"
         PaperProps={{
           component: 'form',
           onSubmit: (event) => {
@@ -81,19 +84,17 @@ const RecoverAccount = () => {
       >
         <DialogTitle>Set new password</DialogTitle>
         <DialogContent>
-          <FormControl sx={{ minWidth: '350px' }}>
-            <TextField
-              required
-              margin="dense"
-              id="password"
-              name="password"
-              label="Password"
-              type="password"
-              fullWidth
-              variant="standard"
-              autoComplete="new-password"
-            />
-          </FormControl>
+          <TextField
+            required
+            margin="dense"
+            id="password"
+            name="password"
+            label="Password"
+            type="password"
+            fullWidth
+            variant="standard"
+            autoComplete="new-password"
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={close}>Cancel</Button>
@@ -121,14 +122,16 @@ const RecoverAccount = () => {
         <DialogTitle>Invalid recovery link</DialogTitle>
         <DialogContent>
           <Alert severity="warning">
-            The account recovery link has expired. Please send a new one.
+            The recovery link expired. Please send a new one.
           </Alert>
         </DialogContent>
         <DialogActions>
+          <Button onClick={finish}>Cancel</Button>
           <Button onClick={recoverAccount}>Send again</Button>
         </DialogActions>
       </Dialog>
       <RecoveryDialog control={recoveryControl} />
+      <MarketingContent />
     </Fragment>
   );
 };
