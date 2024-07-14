@@ -79,8 +79,4 @@ const MarketingContent = () => {
   );
 };
 
-/*
-<div className="main-banner-overlay" />
-*/
-
 export default MarketingContent;

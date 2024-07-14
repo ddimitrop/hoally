@@ -1,22 +1,52 @@
-1) Sign up dialog all OK
+1) Sign up dialog all OK: 
+     CHECK(2024-07-13)
 2) Sign up dialog with name exists
-3) Sign up dialog with email exists
+     CHECK(2024-07-13)
+3) Sign up dialog with email exists: 
+     CHECK(2024-07-13)
 4) Sign up dialog clicking on recover
+     CHECK(2024-07-13)
 5) Follow the recovery link while unsinged
+     CHECK(2024-07-13)
 6) Follow the recovery link while signed
-7) Follow an expired recovery link while unsigned
-8) Follow an expired recovery link while signed
-8) Follow an expired recovery link and resend
-10) Follow a verification link while unsinged
-11) Follow a verification link while signed
-12) Follow a verification while on a different account
-13) Follow an expired verification link while unsigned
-14) Follow an expired verification link while signed
-15) Logout
-16) Reload with authentication
-17) Reload with wrong authentication
-18) Change settings just name
-19) Change settings just email
-20) Change settings password
-21) Change settings all
-22) Delete an account
+     CHECK(2024-07-13)
+7) Follow the recovery link while signed on a different account
+     CHECK(2024-07-13)
+8) Follow an expired recovery link while unsigned
+     CHECK(2024-07-13)
+9) Follow an expired recovery link while signed
+     CHECK(2024-07-13)
+10) Follow an expired recovery link and resend
+      CHECK(2024-07-13)
+11) Follow a verification link while unsinged
+      ISSUE -> You are not getting signed in automatically - will not do.
+      CHECK(2024-07-13)
+12) Follow a verification link while signed
+      CHECK(2024-07-13)
+13) Follow a verification while on a different account
+      ISSUE -> You are not getting signed in automatically - will not do.
+      CHECK(2024-07-13)
+14) Follow an expired verification link while unsigned
+      CHECK(2024-07-13)
+15) Follow an expired verification link while signed
+      CHECK(2024-07-13)
+16) Sign in dialog all OK: 
+      CHECK(2024-07-13)
+17) Sign in dialog wrong credentials: 
+      CHECK(2024-07-13)
+18) Logout
+      CHECK(2024-07-13)
+19) Reload with authentication
+      CHECK(2024-07-13)
+20) Reload with wrong authentication
+      CHECK(2024-07-13)
+21) Change settings just name
+       ISSUE -> We should show name
+22) Change settings just email
+      CHECK(2024-07-13)
+23) Change settings password
+      CHECK(2024-07-13)
+24) Change settings all
+      CHECK(2024-07-13)
+25) Delete an account
+      CHECK(2024-07-13)

@@ -50,14 +50,13 @@ export function useAlreadyUsedCheck(field, label, onUsed, onException) {
 const SingupDialog = ({ control }) => {
   const global = useContext(Global);
   let [errorMessage, setErrorMessage] = useState('');
-  let [errorSeverity, setErrorSeverity] = useState('error');
+  let [recoveryLinkSuccess, setRecoveryLinkSuccess] = useState(false);
   let [signupSuccess, setSignupSuccess] = useState(false);
   const closeSignupSuccess = () => setSignupSuccess(false);
-
+  const closeRecoveryLinkSuccess = () => setRecoveryLinkSuccess(false);
   const form = formCapture();
 
   const onUsedField = ({ label }) => {
-    setErrorSeverity('error');
     setErrorMessage(`There is already an account with this ${label}.`);
   };
 
@@ -95,11 +94,19 @@ const SingupDialog = ({ control }) => {
     setErrorMessage(`There was a problem: "${message}" - please try again.`);
   }
 
+  async function validateName(name) {
+    if (name.match(/@.*\.,*/)) {
+      setErrorMessage(`The nickname is shown in posts - no emails please.`);
+      return false;
+    }
+    return !(await nameUsed.check(name));
+  }
+
   async function ensureNotAlreadyUsed(data) {
     // It is possible to submit the form without onBlur
     // when using autocomplete
     const { email, name } = data;
-    const nameOk = !(await nameUsed.check(name));
+    const nameOk = await validateName(name);
     const emailOK = !(await emailUsed.check(email));
 
     return nameOk && emailOK;
@@ -129,8 +136,8 @@ const SingupDialog = ({ control }) => {
   function recoverAccount() {
     sendRecoverEmail(form.get('email'))
       .then(() => {
-        setErrorMessage('Checkout of your emails for a recovery link.');
-        setErrorSeverity('info');
+        close();
+        setRecoveryLinkSuccess(true);
       })
       .catch((e) => {
         exceptionMessage(e);
@@ -169,7 +176,7 @@ const SingupDialog = ({ control }) => {
             autoComplete="first-name"
             error={nameUsed.hasError()}
             onChange={clearNameError}
-            onBlur={(event) => nameUsed.check(event.currentTarget.value)}
+            onBlur={(event) => validateName(event.currentTarget.value)}
           />
           <TextField
             margin="dense"
@@ -210,7 +217,7 @@ const SingupDialog = ({ control }) => {
             sx={{
               visibility: errorMessage ? 'visible' : 'hidden',
             }}
-            severity={errorSeverity}
+            severity="error"
           >
             {errorMessage}
           </Alert>
@@ -232,6 +239,15 @@ const SingupDialog = ({ control }) => {
         <Alert onClose={closeSignupSuccess} severity="info">
           Your new account requires email validation. Please check out your
           inbox.
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        open={recoveryLinkSuccess}
+        onClose={closeRecoveryLinkSuccess}
+      >
+        <Alert onClose={closeRecoveryLinkSuccess} severity="info">
+          Checkout of your emails for a recovery link..
         </Alert>
       </Snackbar>
     </Fragment>

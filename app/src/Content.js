@@ -32,6 +32,12 @@ const Content = () => {
         ? 'Your account has been validated successfully!'
         : 'Your email has not been validated. Please check out your inbox.';
 
+  function closeAlert() {
+    global.setNeedsEmailValidation(false);
+    setInvalidToken(false);
+    setValidationSuccess(false);
+  }
+
   const closeResendSuccess = () => setResendSuccess(false);
 
   const triggerEmailValidation = () => {
@@ -61,30 +67,32 @@ const Content = () => {
       <Fragment>
         <Alert
           severity={messageSeverity()}
+          onClose={closeAlert}
           sx={{
             flexGrow: 1,
           }}
           action={
-            validationSuccess ? (
+            <Fragment>
+              {global.hoaUser.email && !validationSuccess ? (
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={triggerEmailValidation}
+                >
+                  Send again
+                </Button>
+              ) : (
+                ''
+              )}
               <IconButton
                 size="small"
                 aria-label="close"
                 color="inherit"
-                onClick={() => setValidationSuccess(false)}
+                onClick={() => closeAlert()}
               >
                 <CloseIcon fontSize="small" />
               </IconButton>
-            ) : global.hoaUser.email ? (
-              <Button
-                color="inherit"
-                size="small"
-                onClick={triggerEmailValidation}
-              >
-                Send again
-              </Button>
-            ) : (
-              ''
-            )
+            </Fragment>
           }
         >
           {messageContent()}

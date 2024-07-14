@@ -108,6 +108,7 @@
 
 @media (max-width: 736px) {
   .marketing-graphics {
+    height: 150px;
     gap: 8px;
   }
 }
@@ -129,6 +130,15 @@
   text-align: center;
   color: rgb(245, 245, 245);
   border-radius: 4px;
+}
+
+@media (max-width: 736px) {
+  .marketing-graphics > div {
+    width: 115px;
+    height: 115px;
+    font-size: 18px;
+    padding-top: 80px;
+  }
 }
 
 .marketing-graphics > div > span {
