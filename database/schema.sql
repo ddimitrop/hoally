@@ -1,10 +1,8 @@
 \c postgres
 SET ROLE postgres;
-REVOKE ALL PRIVILEGES ON DATABASE hoadb FROM hoadb;
-DROP ROLE IF EXISTS hoadb;
-REVOKE ALL PRIVILEGES ON DATABASE hoadb FROM hoa;
-DROP ROLE IF EXISTS hoa;
 DROP DATABASE IF EXISTS hoadb;
+DROP ROLE IF EXISTS hoadb;
+DROP ROLE IF EXISTS hoa;
 
 CREATE DATABASE hoadb;
 CREATE ROLE hoadb;
@@ -29,7 +27,10 @@ CREATE TABLE community (
     state state_enum NOT NULL,
     zipcode VARCHAR(5) NOT NULL 
         CONSTRAINT us_zip_code CHECK (regexp_like(zipcode, '^\d{5}$')),
-    icon_file VARCHAR(100));
+    icon_file VARCHAR(100),
+    creation_timestamp TIMESTAMP DEFAULT LOCALTIMESTAMP,
+    last_update_timestamp TIMESTAMP
+);
 
 CREATE INDEX ON community(zipcode);
 
@@ -49,7 +50,11 @@ CREATE TABLE hoauser (
     -- Temporary token (user forgot password).
     hashed_token VARCHAR(200) UNIQUE,
     token_creation_timestamp TIMESTAMP,
-    encrypted_icon_file VARCHAR(100)
+    encrypted_icon_file VARCHAR(100),
+    creation_timestamp TIMESTAMP DEFAULT LOCALTIMESTAMP,
+    last_update_timestamp TIMESTAMP,
+    email_validation_timestap TIMESTAMP,
+    last_access_date DATE
 );
 
 CREATE UNIQUE INDEX ON hoauser(hashed_name, hashed_password);
@@ -66,8 +71,14 @@ CREATE TABLE member (
     token_creation_timestamp TIMESTAMP,
     community_id INTEGER NOT NULL REFERENCES community(id) ON DELETE CASCADE,
     address VARCHAR(200) NOT NULL,
+    -- The following 2 matter only if hoauser_id is null
+    encrypted_invitation_full_name VARCHAR(300),
+    encrypted_invitation_email VARCHAR(300),
+    is_admin BOOLEAN NOT NULL DEFAULT false,
     is_board_member BOOLEAN NOT NULL DEFAULT false,
-    is_moderator BOOLEAN NOT NULL DEFAULT false
+    is_moderator BOOLEAN NOT NULL DEFAULT false,
+    creation_timestamp TIMESTAMP DEFAULT LOCALTIMESTAMP,
+    last_update_timestamp TIMESTAMP
 );
 
 CREATE UNIQUE INDEX ON member(community_id, address);

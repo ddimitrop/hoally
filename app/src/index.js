@@ -3,10 +3,13 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import './index.css';
 import App, { appLoader } from './App';
 import ErrorPage from './ErrorPage';
-import Content, { emailLoader } from './Content';
+import ValidateEmail, { emailLoader } from './ValidateEmail';
+import MarketingContent from './MarketingContent';
 import RecoverAccount from './RecoverAccount';
+import CommunityList from './CommunityList';
 import GlobalContext from './Global';
 import { StrictMode } from 'react';
+import { RequireAuth, DefaultLanding } from './Navigate';
 
 const router = createBrowserRouter([
   {
@@ -17,16 +20,28 @@ const router = createBrowserRouter([
     children: [
       {
         path: '',
-        element: <Content />,
+        element: (
+          <DefaultLanding>
+            <MarketingContent />
+          </DefaultLanding>
+        ),
       },
       {
         path: 'validate-email/:token',
-        element: <Content />,
+        element: <ValidateEmail />,
         loader: emailLoader,
       },
       {
         path: 'recover-account/:token',
         element: <RecoverAccount />,
+      },
+      {
+        path: 'community',
+        element: (
+          <RequireAuth>
+            <CommunityList />
+          </RequireAuth>
+        ),
       },
     ],
   },

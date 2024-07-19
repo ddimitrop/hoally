@@ -15,6 +15,7 @@ import './SignupDialog.js';
 import SingupDialog from './SignupDialog';
 import SinginDialog from './SigninDialog';
 import AppDrawer from './AppDrawer';
+import ValidationWarning from './ValidationWarning';
 
 const TopBar = () => {
   const signup = flagState(useState(false));
@@ -69,6 +70,7 @@ const TopBar = () => {
       <SingupDialog control={signup} />
       <SinginDialog control={signin} />
       <AppDrawer control={drawer} />
+      <ValidationWarning />
     </Fragment>
   );
 };

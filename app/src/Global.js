@@ -2,13 +2,17 @@ import { createContext, useState } from 'react';
 
 export const Global = createContext();
 
+let currentUser = {};
+
 export default function GlobalContext({ children }) {
   const [hoaUser, setHoaUser] = useState({});
   const [appError, setAppError] = useState('');
   const [needsEmailValidation, setNeedsEmailValidation] = useState(false);
+  const getCurrentUser = () => currentUser;
 
   function loadHoaUser(hoaUser) {
-    setHoaUser(hoaUser);
+    currentUser = hoaUser;
+    setHoaUser(currentUser);
     setNeedsEmailValidation(hoaUser.email_validated === false);
   }
 
@@ -16,8 +20,8 @@ export default function GlobalContext({ children }) {
     <Global.Provider
       value={{
         hoaUser,
-        setHoaUser,
         loadHoaUser,
+        getCurrentUser,
         appError,
         setAppError,
         needsEmailValidation,

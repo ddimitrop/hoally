@@ -102,7 +102,7 @@ const SettingsDialog = ({ control }) => {
       .then((ok) => {
         if (!ok || emailUsed.hasError()) return;
         return postData('/api/hoauser', data, 'PUT').then(({ hoaUser }) => {
-          global.setHoaUser(hoaUser);
+          global.loadHoaUser(hoaUser);
           close();
           if (didEmailChange) {
             sendValidationEmail(hoaUser.email)

@@ -9,9 +9,11 @@ import Snackbar from '@mui/material/Snackbar';
 import { useState, useContext, Fragment } from 'react';
 import { Global } from './Global.js';
 import { postData } from './json-utils.js';
+import { useLogout } from './Navigate.js';
 
 const DeleteAccountDialog = ({ control }) => {
   const global = useContext(Global);
+  const logout = useLogout();
   let [errorMessage, setErrorMessage] = useState('');
   let [deleteSuccess, setDeleteSuccess] = useState(false);
 
@@ -36,6 +38,7 @@ const DeleteAccountDialog = ({ control }) => {
           global.loadHoaUser({});
           setDeleteSuccess(true);
           control.close();
+          logout();
         }
       })
       .catch((e) => {
