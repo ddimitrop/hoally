@@ -4,21 +4,22 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import FormControl from '@mui/material/FormControl';
 import TextField from '@mui/material/TextField';
 import Snackbar from '@mui/material/Snackbar';
 import { Global } from './Global.js';
 import RecoveryDialog from './RecoveryDialog.js';
 import { useContext, useState, Fragment } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { postData, formData } from './json-utils.js';
+import { useParams } from 'react-router-dom';
+import { postData } from './json-utils.js';
+import { formData } from './state-utils.js';
 import { ACCESS_TOKEN_INVALID } from './errors.mjs';
 import MarketingContent from './MarketingContent';
+import { useMoveNext } from './Navigate.js';
 
 const RecoverAccount = () => {
   const global = useContext(Global);
   let { token } = useParams();
-  const navigate = useNavigate();
+  const moveNext = useMoveNext();
   let [changePassword, setChangePassword] = useState(true);
   let [passwordChanged, setPasswordChanged] = useState(false);
   let [invalidToken, setInvalidToken] = useState(false);
@@ -26,7 +27,7 @@ const RecoverAccount = () => {
 
   function close() {
     setChangePassword(false);
-    navigate('/');
+    moveNext();
   }
 
   function finish() {
@@ -62,7 +63,7 @@ const RecoverAccount = () => {
     isOpen: () => showRecoveryDialog,
     close: () => {
       setShowRecoveryDialog(false);
-      navigate('/', { replace: true });
+      global.moveNext();
     },
   };
 

@@ -6,6 +6,7 @@ import postgres from 'postgres';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { hoaUserApi } from './db/hoauser.mjs';
+import { communityApi } from './db/community.mjs';
 import cors from 'cors';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { createTransport } from 'nodemailer';
@@ -167,6 +168,7 @@ export function prepareConnection(options) {
 const api = {
   init: (connection, app) => {
     hoaUserApi(connection, app);
+    communityApi(connection, app);
   },
 };
 

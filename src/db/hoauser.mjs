@@ -25,7 +25,8 @@ export class HoaUser {
     const { sql, crypto } = this.connection;
     await sql`
       update hoauser
-      set hashed_password = ${crypto.hash(password)}
+      set hashed_password = ${crypto.hash(password)},
+          last_update_timestamp = LOCALTIMESTAMP
       where id = ${this.data.id}`;
   }
 
@@ -34,7 +35,8 @@ export class HoaUser {
     const { sql, crypto } = this.connection;
     await sql`
       update hoauser
-      set encrypted_full_name = ${crypto.encrypt(fullName)}
+      set encrypted_full_name = ${crypto.encrypt(fullName)},
+          last_update_timestamp = LOCALTIMESTAMP
       where id = ${this.data.id}`;
     this.data.full_name = fullName;
   }
@@ -44,7 +46,8 @@ export class HoaUser {
     const { sql } = this.connection;
     await sql`
       update hoauser
-      set email_validated = true
+      set email_validated = true,
+          email_validation_timestap = LOCALTIMESTAMP
       where id = ${this.data.id}`;
     this.data.email_validated = true;
   }
@@ -61,7 +64,8 @@ export class HoaUser {
       set 
           hashed_email = ${crypto.hash(email)},
           encrypted_email = ${crypto.encrypt(email)},
-          email_validated = false
+          email_validated = false,
+          last_update_timestamp = LOCALTIMESTAMP
       where id = ${this.data.id}`;
     this.data.email = email;
     this.data.email_validated = false;
@@ -130,6 +134,12 @@ export class HoaUser {
     delete data.encrypted_full_name;
     data.email = crypto.decrypt(data.encrypted_email);
     delete data.encrypted_email;
+    delete data.creation_timestamp;
+    delete data.last_update_timestamp;
+    delete data.email_validation_timestap;
+    delete data.last_signin_timestamp;
+    delete data.last_access_date;
+
     return data;
   }
 
@@ -137,12 +147,14 @@ export class HoaUser {
     const { sql } = connection;
     const [hashedName, hashedPassword] = credentials;
     const data = await sql`
-      select * from hoauser
+      select *
+      from hoauser
       where hashed_name = ${hashedName}
       and hashed_password = ${hashedPassword}`;
     if (data.length !== 1) {
       throw new AppError(LOGIN_ERROR);
     }
+    await HoaUser.updateAccessDate(sql, data[0]);
     return new HoaUser(connection, data[0]);
   }
 
@@ -159,7 +171,21 @@ export class HoaUser {
     if (data.length !== 1) {
       throw new AppError(ACCESS_TOKEN_INVALID);
     }
+    await HoaUser.updateAccessDate(sql, data[0]);
     return new HoaUser(connection, data[0]);
+  }
+
+  static async updateAccessDate(sql, data) {
+    const { last_access_date: lastAccessDate } = data;
+    if (
+      !lastAccessDate ||
+      lastAccessDate.toDateString() != new Date().toDateString()
+    ) {
+      await sql`
+      update hoauser
+      set last_access_date = CURRENT_DATE
+      where id = ${data.id}`;
+    }
   }
 
   static loginCredentials(crypto, name, password) {
@@ -195,41 +221,46 @@ const TOKEN_EXPIRATION = '12:00:00';
 
 const AUTH_COOKIE = 'HAU';
 
+function parseCookie(cookie) {
+  const authCookie = cookie
+    .split(';')
+    .map((c) => c.split('='))
+    .find((p) => p && p.length === 2 && p[0] === AUTH_COOKIE);
+  const auth = authCookie[1];
+  const credentials = auth.split('-');
+  if (credentials.length != 2) {
+    throw Error();
+  }
+  return credentials;
+}
+
+function setCookie(res, credentials) {
+  const auth = credentials.join('-');
+  res.cookie(AUTH_COOKIE, auth, { httpOnly: true });
+}
+
+/** Gets the authenticated user from the authentication cookie. */
+export async function getUser(connection, req) {
+  const {
+    headers: { cookie },
+  } = req;
+  let credentials;
+  try {
+    credentials = parseCookie(cookie);
+  } catch {
+    throw new AppError(NO_AUTHENTICATION_COOKIE);
+  }
+  return await HoaUser.get(connection, credentials);
+}
+
 /** Loads and returns the user using the authentication cookie. */
 export function hoaUserApi(connection, app) {
-  function parseCookie(cookie) {
-    const authCookie = cookie
-      .split(';')
-      .map((c) => c.split('='))
-      .find((p) => p && p.length === 2 && p[0] === AUTH_COOKIE);
-    const auth = authCookie[1];
-    const credentials = auth.split('-');
-    if (credentials.length != 2) {
-      throw Error();
-    }
-    return credentials;
-  }
-
-  function setCookie(res, credentials) {
-    const auth = credentials.join('-');
-    res.cookie(AUTH_COOKIE, auth, { httpOnly: true });
+  async function authenticate(req) {
+    return getUser(connection, req);
   }
 
   function getCredentials(name, password) {
     return HoaUser.loginCredentials(connection.crypto, name, password);
-  }
-
-  async function authenticate(req) {
-    const {
-      headers: { cookie },
-    } = req;
-    let credentials;
-    try {
-      credentials = parseCookie(cookie);
-    } catch {
-      throw new AppError(NO_AUTHENTICATION_COOKIE);
-    }
-    return await HoaUser.get(connection, credentials);
   }
 
   async function tokenEmail(req, res, subject, description, path) {

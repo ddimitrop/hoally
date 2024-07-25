@@ -9,9 +9,10 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Snackbar from '@mui/material/Snackbar';
 import { useState, useContext, Fragment } from 'react';
 import { Global } from './Global.js';
-import { postData, formData } from './json-utils.js';
+import { postData } from './json-utils.js';
 import { sendValidationEmail, sendRecoverEmail } from './email-utils.js';
-import { formCapture } from './state-utils.js';
+import { formCapture, formData } from './state-utils.js';
+import { useDefaultLanding } from './Navigate.js';
 
 export function useAlreadyUsedCheck(field, label, onUsed, onException) {
   let [error, setError] = useState(false);
@@ -49,10 +50,14 @@ export function useAlreadyUsedCheck(field, label, onUsed, onException) {
 
 const SingupDialog = ({ control }) => {
   const global = useContext(Global);
+  const defaultLanding = useDefaultLanding();
   let [errorMessage, setErrorMessage] = useState('');
   let [recoveryLinkSuccess, setRecoveryLinkSuccess] = useState(false);
   let [signupSuccess, setSignupSuccess] = useState(false);
-  const closeSignupSuccess = () => setSignupSuccess(false);
+  const closeSignupSuccess = () => {
+    setSignupSuccess(false);
+    defaultLanding();
+  };
   const closeRecoveryLinkSuccess = () => setRecoveryLinkSuccess(false);
   const form = formCapture();
 
@@ -117,7 +122,7 @@ const SingupDialog = ({ control }) => {
       .then((ok) => {
         if (!ok || nameUsed.hasError() || emailUsed.hasError()) return;
         return postData('/api/hoauser', data).then(({ hoaUser }) => {
-          global.setHoaUser(hoaUser);
+          global.loadHoaUser(hoaUser);
           close();
           sendValidationEmail(hoaUser.email)
             .then(() => {

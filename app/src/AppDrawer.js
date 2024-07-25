@@ -11,16 +11,19 @@ import { getData } from './json-utils.js';
 import { Global } from './Global';
 import { useContext, useState, Fragment } from 'react';
 import { flagState } from './state-utils.js';
+import { useLogout } from './Navigate.js';
 
 const AppDrawer = ({ control }) => {
   const global = useContext(Global);
   const settings = flagState(useState(false));
+  const moveToLogout = useLogout();
 
   const logout = function () {
     getData('/api/hoauser/logout')
       .then(({ ok }) => {
         if (ok) {
           global.loadHoaUser({});
+          moveToLogout();
         }
       })
       .catch((e) => {

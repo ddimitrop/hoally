@@ -7,13 +7,16 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import { useState, useContext, Fragment } from 'react';
 import { Global } from './Global.js';
-import { postData, formData } from './json-utils.js';
+import { postData } from './json-utils.js';
+import { formData } from './state-utils.js';
 import { LOGIN_ERROR } from './errors.mjs';
 import RecoveryDialog from './RecoveryDialog.js';
+import { useDefaultLanding } from './Navigate.js';
 
 const SinginDialog = (props) => {
   const { control } = props;
   const global = useContext(Global);
+  const defaultLanding = useDefaultLanding();
   let [errorMessage, setErrorMessage] = useState('');
   let [showRecoverButton, setShowRecoverButton] = useState(false);
   let [showRecoverDialog, setShowRecoverDialog] = useState(false);
@@ -39,6 +42,7 @@ const SinginDialog = (props) => {
       .then(({ hoaUser, appError }) => {
         if (hoaUser) {
           global.loadHoaUser(hoaUser);
+          defaultLanding();
           close();
         } else {
           setErrorMessage(appError);

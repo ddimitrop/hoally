@@ -41,6 +41,10 @@ export async function postData(url, data, method = 'POST') {
 }
 
 export function formData(event) {
-  const formData = new FormData(event.currentTarget);
+  return getFormData(event.currentTarget);
+}
+
+export function getFormData(elemenet) {
+  const formData = new FormData(elemenet);
   return Object.fromEntries(formData.entries());
 }

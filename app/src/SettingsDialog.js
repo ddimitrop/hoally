@@ -7,19 +7,21 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Snackbar from '@mui/material/Snackbar';
-import DeleteAccountDialog from './DeleteAccountDialog';
+import DeleteConfirmDialog from './DeleteConfirmDialog';
 import { useAlreadyUsedCheck } from './SignupDialog';
 import { useState, useContext, Fragment } from 'react';
 import { Global } from './Global.js';
-import { postData, formData } from './json-utils.js';
+import { postData } from './json-utils.js';
 import { sendValidationEmail } from './email-utils.js';
-import { formCapture, flagState } from './state-utils.js';
+import { formCapture, flagState, formData } from './state-utils.js';
+import { useLogout } from './Navigate.js';
 
 const SettingsDialog = ({ control }) => {
   const global = useContext(Global);
   let [wasChanged, setWasChanged] = useState(false);
   let [errorMessage, setErrorMessage] = useState('');
   let [signupSuccess, setSignupSuccess] = useState(false);
+  const logout = useLogout();
 
   let [needValidationEmail, setNeedValidationEmail] = useState(false);
 
@@ -102,7 +104,7 @@ const SettingsDialog = ({ control }) => {
       .then((ok) => {
         if (!ok || emailUsed.hasError()) return;
         return postData('/api/hoauser', data, 'PUT').then(({ hoaUser }) => {
-          global.setHoaUser(hoaUser);
+          global.loadHoaUser(hoaUser);
           close();
           if (didEmailChange) {
             sendValidationEmail(hoaUser.email)
@@ -237,7 +239,23 @@ const SettingsDialog = ({ control }) => {
             : 'Your account was changed succesfully!'}
         </Alert>
       </Snackbar>
-      <DeleteAccountDialog control={deleteDialog} />
+      <DeleteConfirmDialog
+        control={deleteDialog}
+        onDelete={() => {
+          global.loadHoaUser({});
+          logout();
+        }}
+        deleteApiPath="/api/hoauser"
+        deleteTitle="Delete account"
+        deleteText={
+          <span>
+            Are you sure about this? <br />
+            Deleting your account will remove you from all your communities.
+            <b> It cannot be undone.</b>
+          </span>
+        }
+        deleteSuccessText="Your account was deleted succesfully"
+      />
     </Fragment>
   );
 };

@@ -31,6 +31,7 @@ export function handleErrors(cb) {
       if (e instanceof AppError) {
         res.json({ appError: e.message });
       } else {
+        console.log('Handling unexptected error: ', e);
         res.json({ error: e.message });
       }
     }
