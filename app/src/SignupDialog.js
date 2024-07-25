@@ -9,9 +9,9 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Snackbar from '@mui/material/Snackbar';
 import { useState, useContext, Fragment } from 'react';
 import { Global } from './Global.js';
-import { postData, formData } from './json-utils.js';
+import { postData } from './json-utils.js';
 import { sendValidationEmail, sendRecoverEmail } from './email-utils.js';
-import { formCapture } from './state-utils.js';
+import { formCapture, formData } from './state-utils.js';
 import { useDefaultLanding } from './Navigate.js';
 
 export function useAlreadyUsedCheck(field, label, onUsed, onException) {

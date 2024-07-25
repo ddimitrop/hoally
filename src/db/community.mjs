@@ -1,17 +1,71 @@
 import { handleErrors } from '../../app/src/errors.mjs';
-import { authenticate } from './hoauser.mjs';
+import { getUser } from './hoauser.mjs';
 
 /**
  * A user of the Hoally site. It can be a member of 0 to MAX_USER_COMMUNITIES.
  */
 export class Community {
-  constructor(connection, data) {
+  constructor(connection, data, hoaUserId) {
     this.connection = connection;
     this.data = data;
+    // The id of the user that operates on the community.
+    this.hoaUserId = hoaUserId;
   }
 
   getData() {
     return this.data;
+  }
+
+  async update(name, address, city, state, zipcode, adminAddress) {
+    const { sql } = this.connection;
+    const id = this.getData().id;
+    const hoaUserId = this.hoaUserId;
+    const data = await sql.begin(async (sql) => {
+      const [community] = await sql`
+      update community
+        set name = ${name},
+        address = ${address},
+        city = ${city},
+        state = ${state},
+        zipcode = ${zipcode}
+      where
+        id = ${id} and
+        id in (select community_id 
+               from member 
+              where hoauser_id = ${hoaUserId} and
+              is_admin = true)
+
+      returning *
+      `;
+
+      await sql`
+      update member 
+        set address = ${adminAddress}
+      where
+        community_id = ${id} and
+        hoauser_id = ${hoaUserId} and
+        is_admin = true
+
+      returning *
+      `;
+
+      return { ...community, admin_address: adminAddress, is_admin: true };
+    });
+    this.data = data;
+  }
+
+  async remove() {
+    const { sql } = this.connection;
+    const id = this.getData().id;
+    const hoaUserId = this.hoaUserId;
+    await sql`
+      delete from community
+      where
+        id = ${id} and
+        id in (select community_id 
+               from member 
+              where hoauser_id = ${hoaUserId} and
+              is_admin = true)`;
   }
 
   static async create(
@@ -22,7 +76,7 @@ export class Community {
     state,
     zipcode,
     adminAddress,
-    hoaUser,
+    hoaUserId,
   ) {
     const { sql } = connection;
 
@@ -52,27 +106,79 @@ export class Community {
         address,
         is_admin
       ) values (
-        ${hoaUser.getData().id},
+        ${hoaUserId},
         ${community.id},
-        ${hoaUserAddress},
+        ${adminAddress},
         true
       )
+
+      returning *
       `;
 
-      return community;
+      return { ...community, admin_address: adminAddress, is_admin: true };
     });
-    return new Community(connection, community);
+    return new Community(connection, community, hoaUserId);
+  }
+
+  static async getList(connection, hoaUserId) {
+    const { sql } = connection;
+
+    const communities = await sql`
+      select       
+        c.id,  
+        c.name,
+        c.address,
+        c.city,
+        c.state,
+        c.zipcode,
+        m.address as admin_address,
+        m.is_admin 
+        from community c 
+        inner join member m 
+        on (c.id = m.community_id) 
+        where m.hoauser_id = ${hoaUserId}
+        order by c.id`;
+    return communities;
+  }
+
+  static async get(connection, hoaUserId, id) {
+    const { sql } = connection;
+
+    const [community] = await sql`
+      select       
+        c.id,  
+        c.name,
+        c.address,
+        c.city,
+        c.state,
+        c.zipcode,
+        m.address as admin_address,
+        m.is_admin 
+        from community c 
+        inner join member m 
+        on (c.id = m.community_id) 
+        where m.hoauser_id = ${hoaUserId}
+          and c.id = ${id}`;
+
+    return new Community(connection, community, hoaUserId);
   }
 }
 
 export function communityApi(connection, app) {
-  /** Creates a new user and sets the authentication cookie. */
+  /** Creates a new community. */
   app.post(
-    '/api/hoauser',
+    '/api/community',
     handleErrors(async (req, res) => {
-      const hoaUserInst = await authenticate(req);
-      const hoaUser = hoaUserInst.getData();
-      const { name, address, city, state, zipcode, adminAddress } = req.body;
+      const hoaUserInst = await getUser(connection, req);
+      const hoaUserId = hoaUserInst.getData().id;
+      const {
+        name,
+        address,
+        city,
+        state,
+        zipcode,
+        admin_address: adminAddress,
+      } = req.body;
       const communityInst = await Community.create(
         connection,
         name,
@@ -81,10 +187,72 @@ export function communityApi(connection, app) {
         state,
         zipcode,
         adminAddress,
-        hoaUser,
+        hoaUserId,
       );
       const community = communityInst.getData();
       res.json({ community });
+    }),
+  );
+
+  app.put(
+    '/api/community',
+    handleErrors(async (req, res) => {
+      const hoaUserInst = await getUser(connection, req);
+      const hoaUserId = hoaUserInst.getData().id;
+      const {
+        id,
+        name,
+        address,
+        city,
+        state,
+        zipcode,
+        admin_address: adminAddress,
+      } = req.body;
+      const communityInst = await Community.get(connection, hoaUserId, id);
+
+      await communityInst.update(
+        name,
+        address,
+        city,
+        state,
+        zipcode,
+        adminAddress,
+      );
+      const community = communityInst.getData();
+      res.json({ community });
+    }),
+  );
+
+  app.get(
+    '/api/community',
+    handleErrors(async (req, res) => {
+      const hoaUserInst = await getUser(connection, req);
+      const hoaUserId = hoaUserInst.getData().id;
+      const communities = await Community.getList(connection, hoaUserId);
+      res.json(communities);
+    }),
+  );
+
+  app.get(
+    '/api/community/:id',
+    handleErrors(async (req, res) => {
+      const { id } = req.params;
+      const hoaUserInst = await getUser(connection, req);
+      const hoaUserId = hoaUserInst.getData().id;
+      const community = await Community.get(connection, hoaUserId, id);
+      res.json(community.getData());
+    }),
+  );
+
+  app.delete(
+    '/api/community/:id',
+    handleErrors(async (req, res) => {
+      const { id } = req.params;
+      const hoaUserInst = await getUser(connection, req);
+      const hoaUserId = hoaUserInst.getData().id;
+      const community = await Community.get(connection, hoaUserId, id);
+      await community.remove();
+      res.json({ ok: true });
     }),
   );
 }

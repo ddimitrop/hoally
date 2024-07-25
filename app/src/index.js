@@ -6,7 +6,8 @@ import ErrorPage from './ErrorPage';
 import ValidateEmail, { emailLoader } from './ValidateEmail';
 import MarketingContent from './MarketingContent';
 import RecoverAccount from './RecoverAccount';
-import CommunityList from './CommunityList';
+import CommunityList, { communitiesLoader } from './CommunityList';
+import CreateCommunity, { communityLoader } from './CreateCommunity';
 import GlobalContext from './Global';
 import { StrictMode } from 'react';
 import { RequireAuth, DefaultLanding } from './Navigate';
@@ -42,6 +43,24 @@ const router = createBrowserRouter([
             <CommunityList />
           </RequireAuth>
         ),
+        loader: communitiesLoader,
+      },
+      {
+        path: 'community/create',
+        element: (
+          <RequireAuth>
+            <CreateCommunity />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'community/:id',
+        element: (
+          <RequireAuth>
+            <CreateCommunity />
+          </RequireAuth>
+        ),
+        loader: communityLoader,
       },
     ],
   },

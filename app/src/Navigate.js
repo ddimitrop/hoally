@@ -1,6 +1,8 @@
 import { Global } from './Global.js';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useContext } from 'react';
+
+const LOGOUT_PATH = '/';
 
 export function useMoveNext() {
   const global = useContext(Global);
@@ -8,12 +10,12 @@ export function useMoveNext() {
 
   return () => {
     const user = global.getCurrentUser();
-    const isAuthenticated = !!user.name;
+    const isAuthenticated = global.isAuthenticated();
 
     if (isAuthenticated) {
       navigate(defaultLanding(user));
     } else {
-      navigate('/');
+      navigate(LOGOUT_PATH);
     }
   };
 }
@@ -21,14 +23,14 @@ export function useMoveNext() {
 export function useLogout() {
   const navigate = useNavigate();
   return () => {
-    navigate('/');
+    navigate(LOGOUT_PATH);
   };
 }
 
 export function RequireAuth({ children }) {
   const global = useContext(Global);
-  const isAuthenticated = !!global.getCurrentUser().name;
-  return isAuthenticated ? children : <Navigate to="/" />;
+  global.setRequiresAuth();
+  return <div className="main-content">{children}</div>;
 }
 
 const defaultLanding = (user) => {
@@ -37,9 +39,8 @@ const defaultLanding = (user) => {
 
 export function DefaultLanding({ children }) {
   const global = useContext(Global);
-  const user = global.getCurrentUser();
-  const isAuthenticated = !!user.name;
-  return isAuthenticated ? <Navigate to={defaultLanding(user)} /> : children;
+  global.setNeedsLanding();
+  return children;
 }
 
 export function useDefaultLanding() {
@@ -48,5 +49,20 @@ export function useDefaultLanding() {
   return () => {
     const user = global.getCurrentUser();
     navigate(defaultLanding(user));
+  };
+}
+
+export function useDefaultNavigate() {
+  const global = useContext(Global);
+  const navigate = useNavigate();
+
+  return () => {
+    const user = global.getCurrentUser();
+
+    if (global.getNeedsLanding()) {
+      navigate(defaultLanding(user));
+    } else if (global.getNeedsLogout()) {
+      navigate(LOGOUT_PATH);
+    }
   };
 }

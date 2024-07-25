@@ -16,12 +16,15 @@ GRANT USAGE, CREATE ON SCHEMA public TO hoadb;
 SET ROLE hoadb;
 
 -- Supporting just a few states at the moment.
-CREATE TYPE state_enum AS ENUM ('CA', 'AZ', 'NV');
+CREATE TYPE state_enum AS ENUM ('AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI',
+  'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE',
+  'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX',
+  'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY');
 
 -- An HOA community.
 CREATE TABLE community (
     id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY, 
-    name VARCHAR(50) UNIQUE NOT NULL, 
+    name VARCHAR(50) NOT NULL, 
     address VARCHAR(200) NOT NULL,
     city VARCHAR(100) NOT NULL,
     state state_enum NOT NULL,

@@ -221,41 +221,46 @@ const TOKEN_EXPIRATION = '12:00:00';
 
 const AUTH_COOKIE = 'HAU';
 
+function parseCookie(cookie) {
+  const authCookie = cookie
+    .split(';')
+    .map((c) => c.split('='))
+    .find((p) => p && p.length === 2 && p[0] === AUTH_COOKIE);
+  const auth = authCookie[1];
+  const credentials = auth.split('-');
+  if (credentials.length != 2) {
+    throw Error();
+  }
+  return credentials;
+}
+
+function setCookie(res, credentials) {
+  const auth = credentials.join('-');
+  res.cookie(AUTH_COOKIE, auth, { httpOnly: true });
+}
+
+/** Gets the authenticated user from the authentication cookie. */
+export async function getUser(connection, req) {
+  const {
+    headers: { cookie },
+  } = req;
+  let credentials;
+  try {
+    credentials = parseCookie(cookie);
+  } catch {
+    throw new AppError(NO_AUTHENTICATION_COOKIE);
+  }
+  return await HoaUser.get(connection, credentials);
+}
+
 /** Loads and returns the user using the authentication cookie. */
 export function hoaUserApi(connection, app) {
-  function parseCookie(cookie) {
-    const authCookie = cookie
-      .split(';')
-      .map((c) => c.split('='))
-      .find((p) => p && p.length === 2 && p[0] === AUTH_COOKIE);
-    const auth = authCookie[1];
-    const credentials = auth.split('-');
-    if (credentials.length != 2) {
-      throw Error();
-    }
-    return credentials;
-  }
-
-  function setCookie(res, credentials) {
-    const auth = credentials.join('-');
-    res.cookie(AUTH_COOKIE, auth, { httpOnly: true });
+  async function authenticate(req) {
+    return getUser(connection, req);
   }
 
   function getCredentials(name, password) {
     return HoaUser.loginCredentials(connection.crypto, name, password);
-  }
-
-  async function authenticate(req) {
-    const {
-      headers: { cookie },
-    } = req;
-    let credentials;
-    try {
-      credentials = parseCookie(cookie);
-    } catch {
-      throw new AppError(NO_AUTHENTICATION_COOKIE);
-    }
-    return await HoaUser.get(connection, credentials);
   }
 
   async function tokenEmail(req, res, subject, description, path) {

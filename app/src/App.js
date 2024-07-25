@@ -8,6 +8,7 @@ import { Global } from './Global';
 import { getData } from './json-utils.js';
 import { useContext, useEffect } from 'react';
 import { Outlet, useLoaderData } from 'react-router-dom';
+import { useDefaultNavigate } from './Navigate.js';
 
 const theme = createTheme({
   typography: {
@@ -37,6 +38,7 @@ let hoaUserLoaded = false;
 
 export default function App() {
   const global = useContext(Global);
+  const defaultNavigate = useDefaultNavigate();
 
   // Load the signed in cookie (using the authcookie if exists), when there is
   // not a user yet.
@@ -50,6 +52,7 @@ export default function App() {
       global.loadHoaUser(hoaUser);
     }
     // We just ignore appErrors like no/invalid auth cookie
+    defaultNavigate();
   });
 
   return (
