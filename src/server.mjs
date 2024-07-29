@@ -91,14 +91,15 @@ export function parseOptions(program, args) {
     )
     .option('--https', 'Use https protocol')
     .option('--proxy <string>', 'Proxy for development')
-    .option('--prod', 'Prod environment (default port 80 or 443 for https)');
+    .option('--prod', 'Prod environment (default port 80 or 443 for https)')
+    .option('--secrets <string>', 'Path to the secrets directory');
   program.parse(args);
 
   return program.opts();
 }
 
 export function prepareConnection(options) {
-  const SECRETS_DIRECTORY = '/run/secrets/hoally';
+  const SECRETS_DIRECTORY = options.secrets || '/run/secrets/hoally';
   const environment = options.prod ? 'prod' : 'dev';
 
   const cryptoSecrets = fs.readFileSync(
@@ -119,13 +120,14 @@ export function prepareConnection(options) {
     .map((line) => line.split(':'))
     .find((row) => row[0] === environment);
   if (!dbCredentials) throw Error('No hoadb secrets file');
-  const [, userName, password] = dbCredentials;
-  const DB_NAME = 'hoadb';
+  const [, username, password, host] = dbCredentials;
+  const database = 'hoadb';
 
   const sql = postgres({
-    database: DB_NAME,
-    username: userName,
-    password: password,
+    database,
+    username,
+    password,
+    host,
   });
 
   const emailSecrets = fs.readFileSync(

@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+# See: https://hub.docker.com/_/postgres
+
 RUN=$HOME/hoally-run/
 DATA=${RUN}data/
 PG_DATA=${DATA}pgdata/
@@ -21,7 +23,7 @@ then
     docker container rm hoally-db
   fi
 fi
- 
+
 # uid 1004 is user hoa
 docker run --name hoally-db -d \
   -e POSTGRES_PASSWORD_FILE=${D_SECRETS}postgres-passwd \
