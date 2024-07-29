@@ -3,7 +3,6 @@ import Fab from '@mui/material/Fab';
 import MapsHomeWorkTwoToneIcon from '@mui/icons-material/MapsHomeWorkTwoTone';
 import HolidayVillageTwoToneIcon from '@mui/icons-material/HolidayVillageTwoTone';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
@@ -16,6 +15,7 @@ import Typography from '@mui/material/Typography';
 import { useNavigate, useLoaderData } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { getData } from './json-utils.js';
+import { Info } from './Utils.js';
 
 const CommunityList = () => {
   const navigate = useNavigate();
@@ -76,10 +76,9 @@ const CommunityList = () => {
                   >
                     {community.name}
                     {community.is_admin ? (
-                      <ManageAccountsIcon
-                        color="action"
-                        sx={{ marginLeft: '12px' }}
-                        fontSize="xs"
+                      <Info
+                        title="You are an administrator of this community"
+                        icon="manage_accounts"
                       />
                     ) : (
                       ''

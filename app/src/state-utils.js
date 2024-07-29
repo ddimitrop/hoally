@@ -66,3 +66,16 @@ export function useValidation(invalidText) {
     invalidMessage: () => (!valid ? invalidText : ''),
   };
 }
+
+export function useStepper(initial) {
+  let [step, setStep] = useState(initial);
+  return {
+    next: () => {
+      setStep(step + 1);
+    },
+    prev: () => {
+      setStep(step - 1);
+    },
+    current: () => step,
+  };
+}

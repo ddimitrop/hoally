@@ -61,6 +61,7 @@ function encrypt(secret, plaintext) {
 }
 
 function decrypt(secret, encryptedText) {
+  if (!encryptedText) return encryptedText;
   const key = getKey(secret);
   const aad = Buffer.from('0123456789', 'hex');
   const encodedData = encryptedText.split('|');
