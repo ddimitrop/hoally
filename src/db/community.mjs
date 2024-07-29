@@ -1,15 +1,18 @@
 import { handleErrors } from '../../app/src/errors.mjs';
 import { getUser } from './hoauser.mjs';
 
-/**
- * A user of the Hoally site. It can be a member of 0 to MAX_USER_COMMUNITIES.
- */
 export class Community {
   constructor(connection, data, hoaUserId) {
     this.connection = connection;
-    this.data = data;
+    this.data = Community.clear(data);
     // The id of the user that operates on the community.
     this.hoaUserId = hoaUserId;
+  }
+
+  static clear(data) {
+    delete data.creation_timestamp;
+    delete data.last_update_timestamp;
+    return data;
   }
 
   getData() {
@@ -27,7 +30,8 @@ export class Community {
         address = ${address},
         city = ${city},
         state = ${state},
-        zipcode = ${zipcode}
+        zipcode = ${zipcode},
+        last_update_timestamp = LOCALTIMESTAMP
       where
         id = ${id} and
         id in (select community_id 

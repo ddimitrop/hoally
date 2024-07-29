@@ -7,6 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { hoaUserApi } from './db/hoauser.mjs';
 import { communityApi } from './db/community.mjs';
+import { memberApi } from './db/member.mjs';
 import cors from 'cors';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { createTransport } from 'nodemailer';
@@ -171,6 +172,7 @@ const api = {
   init: (connection, app) => {
     hoaUserApi(connection, app);
     communityApi(connection, app);
+    memberApi(connection, app);
   },
 };
 
