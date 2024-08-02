@@ -3,7 +3,7 @@ import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
 import Stack from '@mui/material/Stack';
 import SlideContents from './SlideContents.js';
-import { useContext, useEffect, useState, Fragment } from 'react';
+import { useContext, useEffect, Fragment } from 'react';
 import { useLoaderData } from 'react-router-dom';
 import CommunityDetails from './CommunityDetails.js';
 import CommunityMembers from './CommunityMembers.js';
@@ -71,10 +71,10 @@ const CreateCommunity = () => {
   );
 };
 
-export async function communityLoader({ params: { id } }) {
+export async function communityLoader({ params: { communityId } }) {
   try {
-    const community = await getData(`/api/community/${id}`);
-    const members = await getData(`/api/member/${id}`);
+    const community = await getData(`/api/community/${communityId}`);
+    const members = await getData(`/api/member/${communityId}`);
     return { community, members };
   } catch ({ message: error }) {
     return { error };
