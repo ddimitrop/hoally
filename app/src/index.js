@@ -54,7 +54,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: 'community/:id',
+        path: 'community/:communityId',
         element: (
           <RequireAuth>
             <CreateCommunity />

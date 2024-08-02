@@ -32,13 +32,13 @@ export class Member {
 
   async update(
     address,
-    invitationName,
+    invitationFullName,
     invitationEmail,
     isAdmin,
     isBoardMember,
     isModerator,
   ) {
-    const { sql } = this.connection;
+    const { sql, crypto } = this.connection;
     const id = this.getData().id;
     const hoaUserId = this.hoaUserId;
     const [data] = await sql`
@@ -47,6 +47,8 @@ export class Member {
         is_admin = ${isAdmin},
         is_board_member = ${isBoardMember},
         is_moderator = ${isModerator},
+        encrypted_invitation_full_name = ${crypto.encrypt(invitationFullName)},
+        encrypted_invitation_email = ${crypto.encrypt(invitationEmail)},
         last_update_timestamp = LOCALTIMESTAMP
       where
         id = ${id} and
@@ -57,7 +59,7 @@ export class Member {
 
       returning *
       `;
-    this.data = data;
+    this.data = Member.decrypt(crypto, data);
   }
 
   async remove() {
@@ -78,22 +80,24 @@ export class Member {
     connection,
     communityId,
     address,
-    invitationName,
+    invitationFullName,
     invitationEmail,
     isAdmin,
     isBoardMember,
     isModerator,
     hoaUserId,
   ) {
-    const { sql } = connection;
+    const { sql, crypto } = connection;
 
     const [data] = await sql`
       insert into member (
-        community_id
+        community_id,
         address,
         is_admin,
         is_board_member,
-        is_moderator
+        is_moderator,
+        encrypted_invitation_full_name,
+        encrypted_invitation_email
       ) values (
         (select community_id from member 
          where community_id=${communityId} and 
@@ -101,7 +105,9 @@ export class Member {
         ${address},
         ${isAdmin},
         ${isBoardMember},
-        ${isModerator}  
+        ${isModerator},
+        ${crypto.encrypt(invitationFullName)},
+        ${crypto.encrypt(invitationEmail)}
       )
 
       returning *
@@ -124,7 +130,7 @@ export class Member {
         m.hoauser_id,
         h.encrypted_name
         from member m 
-        inner join hoauser h 
+        left join hoauser h 
         on (h.id = m.hoauser_id) 
         where m.community_id = ${communityId}
         and m.community_id in (
@@ -147,13 +153,12 @@ export class Member {
         m.hoauser_id,
         h.encrypted_name
         from member m 
-        inner join hoauser h 
+        left join hoauser h 
         on (h.id = m.hoauser_id) 
-        where m.community_id = ${communityId}
+        where m.id = ${id}
         and m.community_id in (
           select community_id from member 
-          where hoauser_id = ${hoaUserId})
-        and m.id = ${id}`;
+          where hoauser_id = ${hoaUserId})`;
 
     return new Member(connection, member, hoaUserId);
   }
@@ -166,9 +171,9 @@ export function memberApi(connection, app) {
       const hoaUserInst = await getUser(connection, req);
       const hoaUserId = hoaUserInst.getData().id;
       const {
-        communityId,
+        community_id: communityId,
         address,
-        invitation_name: invitationName,
+        invitation_full_name: invitationFullName,
         invitation_email: invitationEmail,
         is_admin: isAdmin,
         is_board_member: isBoardMember,
@@ -178,7 +183,7 @@ export function memberApi(connection, app) {
         connection,
         communityId,
         address,
-        invitationName,
+        invitationFullName,
         invitationEmail,
         isAdmin,
         isBoardMember,
@@ -198,7 +203,7 @@ export function memberApi(connection, app) {
       const {
         id,
         address,
-        invitation_name: invitationName,
+        invitation_full_name: invitationFullName,
         invitation_email: invitationEmail,
         is_admin: isAdmin,
         is_board_member: isBoardMember,
@@ -208,7 +213,7 @@ export function memberApi(connection, app) {
 
       await memberInst.update(
         address,
-        invitationName,
+        invitationFullName,
         invitationEmail,
         isAdmin,
         isBoardMember,
