@@ -162,6 +162,23 @@ export class Member {
 
     return new Member(connection, member, hoaUserId);
   }
+
+  static async forUser(connection, hoaUserId, communityId) {
+    const { sql } = connection;
+
+    const [member] = await sql`
+      select       
+        m.id,  
+        m.address,
+        m.is_admin,
+        m.is_board_member,
+        m.is_moderator
+        from member m 
+        where m.community_id = ${communityId}
+        and m.hoauser_id = ${hoaUserId}`;
+
+    return new Member(connection, member, hoaUserId);
+  }
 }
 
 export function memberApi(connection, app) {
@@ -244,6 +261,17 @@ export function memberApi(connection, app) {
       const member = await Member.get(connection, hoaUserId, id);
       await member.remove();
       res.json({ ok: true });
+    }),
+  );
+
+  app.get(
+    '/api/member/user/:communityId',
+    handleErrors(async (req, res) => {
+      const { communityId } = req.params;
+      const hoaUserInst = await getUser(connection, req);
+      const hoaUserId = hoaUserInst.getData().id;
+      const member = await Member.forUser(connection, hoaUserId, communityId);
+      res.json(member.getData());
     }),
   );
 }

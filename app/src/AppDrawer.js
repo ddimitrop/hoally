@@ -10,6 +10,7 @@ import SettingsDialog from './SettingsDialog';
 import { getData } from './json-utils.js';
 import { Global } from './Global';
 import { useContext, useState, Fragment } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { flagState } from './state-utils.js';
 import { useLogout } from './Navigate.js';
 
@@ -17,6 +18,7 @@ const AppDrawer = ({ control }) => {
   const global = useContext(Global);
   const settings = flagState(useState(false));
   const moveToLogout = useLogout();
+  const navigate = useNavigate();
 
   const logout = function () {
     getData('/api/hoauser/logout')
@@ -31,6 +33,10 @@ const AppDrawer = ({ control }) => {
       });
   };
 
+  const goToCommunities = () => {
+    navigate('/community');
+  };
+
   return (
     <Fragment>
       <Drawer open={control.isOpen()} onClose={() => control.close()}>
@@ -40,13 +46,26 @@ const AppDrawer = ({ control }) => {
             bgcolor: 'primary.contrastText',
             display: 'flex',
             height: '100%',
-            flexDirection: 'row',
-            alignItems: 'end',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
           role="presentation"
           onClick={() => control.close()}
         >
           <Box role="presentation" sx={{ flexGrow: '1' }}>
+            <List>
+              <ListItem key={'Communities'} disablePadding>
+                <ListItemButton onClick={goToCommunities}>
+                  <ListItemIcon>
+                    <Icon>holiday_village</Icon>
+                  </ListItemIcon>
+                  <ListItemText primary={'Communities'} />
+                </ListItemButton>
+              </ListItem>
+            </List>
+          </Box>
+
+          <Box role="presentation">
             <List>
               <ListItem key={'Settings'} disablePadding>
                 <ListItemButton onClick={() => settings.open()}>

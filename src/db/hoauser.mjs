@@ -78,6 +78,16 @@ export class HoaUser {
       where id = ${this.data.id}`;
   }
 
+  async setDefaultCommunity(communityId) {
+    const { sql } = this.connection;
+    await sql`
+      update hoauser
+      set 
+          default_community = ${communityId}
+      where id = ${this.data.id}`;
+    this.data.default_community = communityId;
+  }
+
   static async nameUsed(connection, name) {
     const { sql, crypto } = connection;
     const data = await sql`
@@ -432,6 +442,17 @@ export function hoaUserApi(connection, app) {
         'Change your lost HOAlly account password',
         'recover-account',
       );
+    }),
+  );
+
+  /** Changes the default community of the current user. */
+  app.post(
+    '/api/hoauser/default',
+    handleErrors(async (req, res) => {
+      const { communityId } = req.body;
+      const hoaUserInst = await authenticate(req);
+      await hoaUserInst.setDefaultCommunity(communityId);
+      res.json({ ok: true });
     }),
   );
 }

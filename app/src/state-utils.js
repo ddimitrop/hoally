@@ -40,7 +40,15 @@ export function getFormData(elemenet) {
 
 export function hasModifications(currentData, newData) {
   for (let v in newData) {
-    if (newData[v] !== (currentData[v] || '')) return true;
+    const newVal = newData[v];
+    let currentVal = currentData[v];
+    if (Array.isArray(newVal)) {
+      currentVal = currentVal || [];
+      if (newVal.join('|') !== currentVal.join('|')) return true;
+    } else {
+      currentVal = currentVal || '';
+      if (newVal !== currentVal) return true;
+    }
   }
   return false;
 }

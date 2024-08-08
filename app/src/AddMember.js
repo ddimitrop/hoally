@@ -44,7 +44,7 @@ const AddMember = ({ member, done, setChanged, addresses }) => {
 
   const checkWasChanged = () => {
     setAddressInValid(isExistingAddress());
-    setChanged(hasModifications(getFormData(), member));
+    setChanged(hasModifications(member, getFormData()));
   };
 
   useEffect(() => {
@@ -186,7 +186,7 @@ const AddMember = ({ member, done, setChanged, addresses }) => {
         >
           Cancel
         </Button>
-        <Button variant="outlined" type="submit">
+        <Button variant="contained" type="submit">
           Save
         </Button>
       </Grid>

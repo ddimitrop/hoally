@@ -12,12 +12,15 @@ import ListItemText from '@mui/material/ListItemText';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListSubheader from '@mui/material/ListSubheader';
 import Typography from '@mui/material/Typography';
+import { Global } from './Global.js';
 import { useNavigate, useLoaderData } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { getData } from './json-utils.js';
 import { Info } from './Utils.js';
+import { postData } from './json-utils.js';
 
 const CommunityList = () => {
+  const global = useContext(Global);
   const navigate = useNavigate();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [communitiesList, setCommunitiesList] = useState([]);
@@ -26,9 +29,38 @@ const CommunityList = () => {
     navigate(`${i}`);
   };
 
+  const goToCommunity = (i) => {
+    const { id: communityId } = communities[i];
+    setSelectedIndex(i);
+    return postData('/api/hoauser/default', { communityId }).then(() => {
+      const currentUser = global.getCurrentUser();
+      currentUser.default_community = communityId;
+      global.loadHoaUser(currentUser);
+      navigate(`/topic/${communityId}`);
+    });
+  };
+
+  const selectDefaultCommunity = () => {
+    const defaultCommunityId = global.getCurrentUser().default_community;
+    if (defaultCommunityId != null) {
+      const defaultIndex = communities.findIndex(
+        (community) => community.id === defaultCommunityId,
+      );
+      if (defaultIndex != null) {
+        setSelectedIndex(defaultIndex);
+      }
+    }
+  };
+
   const communities = useLoaderData();
+  const { error } = communities;
+  if (error) {
+    global.setAppError(error);
+  }
+
   useEffect(() => {
     setCommunitiesList(communities);
+    selectDefaultCommunity();
   }, [communities]);
 
   return (
@@ -51,7 +83,7 @@ const CommunityList = () => {
             secondaryAction={
               <IconButton
                 edge="end"
-                aria-label="delete"
+                aria-label="edit"
                 onClick={() => editCommunity(community.id)}
               >
                 <EditOutlinedIcon />
@@ -60,7 +92,7 @@ const CommunityList = () => {
           >
             <ListItemButton
               selected={selectedIndex === i}
-              onClick={() => setSelectedIndex(i)}
+              onClick={() => goToCommunity(i)}
             >
               <ListItemIcon>
                 <HolidayVillageTwoToneIcon fontSize="large" />

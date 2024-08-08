@@ -8,6 +8,7 @@ import MarketingContent from './MarketingContent';
 import RecoverAccount from './RecoverAccount';
 import CommunityList, { communitiesLoader } from './CommunityList';
 import CreateCommunity, { communityLoader } from './CreateCommunity';
+import TopicsList, { topicsLoader } from './TopicsList';
 import GlobalContext from './Global';
 import { StrictMode } from 'react';
 import { RequireAuth, DefaultLanding } from './Navigate';
@@ -61,6 +62,15 @@ const router = createBrowserRouter([
           </RequireAuth>
         ),
         loader: communityLoader,
+      },
+      {
+        path: 'topic/:communityId',
+        element: (
+          <RequireAuth>
+            <TopicsList />
+          </RequireAuth>
+        ),
+        loader: topicsLoader,
       },
     ],
   },
