@@ -54,8 +54,8 @@ const MarketingContent = () => {
           </span>
         </p>
         <p>
-          Once residents register, they can also post proposals, feedback, and
-          issues alongside HOA board members, which can then be voted on by
+          Once residents register, they can also post propositions, feedback,
+          and issues alongside HOA board members, which can then be voted on by
           other community members. Posting and commenting on others&apos; posts
           is not anonymous, but voting is, to prevent potential conflicts among
           neighbors and ensure that residents feel comfortable expressing their
@@ -64,14 +64,14 @@ const MarketingContent = () => {
         <p>
           Residents who are unable to join HOA board meetings in person or via
           Zoom can still participate in the community. The sentiment of the
-          neighborhood regarding board or resident proposals can be easily
+          neighborhood regarding board or resident propositions can be easily
           discerned without the need for collecting signatures or posting
           letters. Furthermore, posts can include images and PDF documents,
           while comments can provide alternative viewpoints.
         </p>
         <p>
           HOAlly is not a replacement but an aid for HOA board meetings, where
-          all proposals and voting results can be reviewed and taken into
+          all propositions and voting results can be reviewed and taken into
           consideration for the board&apos;s final decisions.
         </p>
       </div>

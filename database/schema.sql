@@ -57,7 +57,8 @@ CREATE TABLE hoauser (
     creation_timestamp TIMESTAMP DEFAULT LOCALTIMESTAMP,
     last_update_timestamp TIMESTAMP,
     email_validation_timestap TIMESTAMP,
-    last_access_date DATE
+    last_access_date DATE,
+    default_community INTEGER REFERENCES community(id) ON DELETE SET NULL
 );
 
 CREATE UNIQUE INDEX ON hoauser(hashed_name, hashed_password);
@@ -88,7 +89,9 @@ CREATE UNIQUE INDEX ON member(community_id, address);
 CREATE UNIQUE INDEX ON member(hashed_token);
 
 -- TODO: refine/decide on more tags
-CREATE TYPE tag_enum AS ENUM ('complaints', 'ideas', 'garden');
+CREATE TYPE tag_enum AS ENUM ('complaints', 'ideas', 'garden', 'maintenance', 'fees', 'fines', 'pool', 'trees', 'parking');
+
+CREATE TYPE topic_type_enum AS ENUM ('proposition', 'announcement');
 
 -- A discussion topic of an HOA community. A topic can have multiple vote items.
 CREATE TABLE topic (
@@ -96,13 +99,14 @@ CREATE TABLE topic (
     community_id INTEGER NOT NULL REFERENCES community(id) ON DELETE CASCADE,
     -- when a member leaves the community the topics remain as orphan.
     member_id INTEGER REFERENCES member(id) ON DELETE SET NULL,
+    type topic_type_enum NOT NULL,
     subject varchar(500) NOT NULL,
     description text,
     tags tag_enum[10],
     images varchar(100)[5],
     documents varchar(100)[5],
     -- When topics are resolved, they are getting archived.
-    is_open boolean
+    is_open boolean NOT NULL DEFAULT true
 );
 
 CREATE INDEX ON topic USING GIN (tags);

@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { hoaUserApi } from './db/hoauser.mjs';
 import { communityApi } from './db/community.mjs';
 import { memberApi } from './db/member.mjs';
+import { topicApi } from './db/topic.mjs';
 import cors from 'cors';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { createTransport } from 'nodemailer';
@@ -173,6 +174,7 @@ const api = {
     hoaUserApi(connection, app);
     communityApi(connection, app);
     memberApi(connection, app);
+    topicApi(connection, app);
   },
 };
 

@@ -34,7 +34,10 @@ export function RequireAuth({ children }) {
 }
 
 const defaultLanding = (user) => {
-  return '/community';
+  const defaultCommunityId = user.default_community;
+  return defaultCommunityId != null
+    ? `topic/${defaultCommunityId}`
+    : '/community';
 };
 
 export function DefaultLanding({ children }) {

@@ -155,7 +155,7 @@ const CommunityMembers = ({ stepper, members }) => {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          marginRight: '18px',
+                          marginRight: '24px',
                         }}
                       >
                         {member.address}
@@ -197,7 +197,7 @@ const CommunityMembers = ({ stepper, members }) => {
                     secondary={
                       member.name || (
                         <Tooltip title={invitationTooltip(member)}>
-                          Not assigned
+                          <span> Not assigned</span>
                         </Tooltip>
                       )
                     }
