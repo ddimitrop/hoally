@@ -8,6 +8,8 @@ const DeleteConfirmDialog = ({
   control,
   onDelete,
   deleteApiPath,
+  deleteMethod,
+  deleteAction,
   deleteTitle,
   deleteText,
   deleteSuccessText,
@@ -29,7 +31,7 @@ const DeleteConfirmDialog = ({
   }
 
   function deleteAccount() {
-    postData(deleteApiPath, {}, 'DELETE')
+    postData(deleteApiPath, {}, deleteMethod || 'DELETE')
       .then(({ ok }) => {
         if (ok) {
           setDeleteSuccess(true);
@@ -49,7 +51,7 @@ const DeleteConfirmDialog = ({
         onConfirm={deleteAccount}
         title={deleteTitle}
         text={deleteText}
-        action="Delete"
+        action={deleteAction || 'Delete'}
         onClose={close}
         errorMessage={errorMessage}
       />
