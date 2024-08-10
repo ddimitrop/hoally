@@ -9,7 +9,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
 import ThumbDownOffAltIcon from '@mui/icons-material/ThumbDownOffAlt';
 import FavoriteIcon from '@mui/icons-material/Favorite';
-import ArchiveIcon from '@mui/icons-material/Archive';
+import ArchiveOutlinedIcon from '@mui/icons-material/ArchiveOutlined';
 import BallotIcon from '@mui/icons-material/Ballot';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
@@ -21,23 +21,33 @@ import { Global } from './Global.js';
 import { useLoaderData } from 'react-router-dom';
 import { useState, useContext, Fragment } from 'react';
 import Divider from '@mui/material/Divider';
-import { getData } from './json-utils.js';
+import { getData, postData } from './json-utils.js';
 import AddTopic from './AddTopic.js';
 import { red } from '@mui/material/colors';
-import { amber } from '@mui/material/colors';
+import { green } from '@mui/material/colors';
 import ConfirmDialog from './ConfirmDialog.js';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
 import { flagState } from './state-utils.js';
+import { useTheme } from '@mui/material/styles';
 
 const TopicsList = () => {
   const global = useContext(Global);
+  const theme = useTheme();
   let [topicAdd, setTopicAdd] = useState(false);
   let [topicEdit, setTopicEdit] = useState(null);
   let [deleteIndex, setDeleteIndex] = useState(null);
   const deleteDialog = flagState(useState(false));
+  let [archiveIndex, setArchiveIndex] = useState(null);
+  const archiveDialog = flagState(useState(false));
   let [topicChanged, setTopicChanged] = useState(false);
   let [onCancel, setOnCancel] = useState({ callback: () => {} });
   const cancelDialog = flagState(useState(false));
+  let [voteCount, setVoteCount] = useState(0);
+
+  const voteUpColor = green[800];
+  const voteDownColor = red[800];
+  const likeColor = red[700];
+  const noVoteColor = theme.palette.grey[600];
 
   const checkChange = (callback) => {
     if (topicChanged) {
@@ -107,15 +117,55 @@ const TopicsList = () => {
     setDeleteIndex(topicsList.length - 1 - i);
     deleteDialog.open();
   };
+
   const deleteTopic = () => {
     topicsList.splice(deleteIndex, 1);
     setDeleteIndex(null);
   };
-  const archiveTopic = () => {};
-  const loveTopic = () => {};
-  const voteUp = () => {};
-  const voteDown = () => {};
-  const hasVotes = (topic) => false;
+
+  const confirmArchive = (i) => {
+    // We show the list in reverse.
+    setArchiveIndex(topicsList.length - 1 - i);
+    archiveDialog.open();
+  };
+
+  const archiveTopic = () => {
+    topicsList.splice(archiveIndex, 1);
+    setArchiveIndex(null);
+  };
+
+  const loveTopic = (topic) => {
+    vote(topic, topic.propositions[0], true);
+  };
+
+  const vote = (topic, proposition, vote) => {
+    if (proposition.vote === vote) {
+      vote = null;
+    }
+    postData(`/api/topic/${topic.id}/vote/${proposition.id}`, {
+      vote,
+    })
+      .then(() => {
+        if (proposition.vote === true) {
+          proposition.votes_up--;
+        } else if (proposition.vote === false) {
+          proposition.votes_down--;
+        }
+        proposition.vote = vote;
+        if (vote === true) {
+          proposition.votes_up++;
+        } else if (vote === false) {
+          proposition.votes_down++;
+        }
+        setVoteCount(voteCount + 1);
+      })
+      .catch(({ message }) => {
+        global.setAppError(message);
+      });
+  };
+
+  const hasVotes = (topic) =>
+    topic.propositions.some((p) => p.votes_up != 0 || p.votes_down != 0);
 
   return (
     <Stack spacing={1}>
@@ -187,9 +237,9 @@ const TopicsList = () => {
                   <IconButton
                     edge="end"
                     aria-label="archive"
-                    onClick={() => archiveTopic(topic.id)}
+                    onClick={() => confirmArchive(i)}
                   >
-                    <ArchiveIcon />
+                    <ArchiveOutlinedIcon />
                   </IconButton>
                 ) : (
                   <Fragment>
@@ -242,9 +292,18 @@ const TopicsList = () => {
                               onClick={() => loveTopic(topic)}
                               aria-label="love"
                             >
-                              <FavoriteIcon fontSize="small" />
+                              <FavoriteIcon
+                                sx={{
+                                  color: topic.propositions[0].vote
+                                    ? likeColor
+                                    : noVoteColor,
+                                }}
+                                fontSize="small"
+                              />
                             </IconButton>
-                            <span style={{ fontSize: '14px' }}>(6)</span>
+                            <span style={{ fontSize: '14px' }}>
+                              ({topic.propositions[0].votes_up})
+                            </span>
                           </Grid>
                         ) : (
                           ''
@@ -270,22 +329,44 @@ const TopicsList = () => {
                               <span style={{ whiteSpace: 'nowrap' }}>
                                 <IconButton
                                   size="small"
-                                  onClick={() => voteUp(proposition)}
+                                  onClick={() => vote(topic, proposition, true)}
                                   aria-label="vote up"
                                 >
-                                  <ThumbUpOffAltIcon fontSize="small" />
+                                  <ThumbUpOffAltIcon
+                                    sx={{
+                                      color:
+                                        proposition.vote === true
+                                          ? voteUpColor
+                                          : noVoteColor,
+                                    }}
+                                    fontSize="small"
+                                  />
                                 </IconButton>
-                                <span style={{ fontSize: '14px' }}>(8)</span>
+                                <span style={{ fontSize: '14px' }}>
+                                  ({proposition.votes_up})
+                                </span>
                               </span>
                               <span style={{ whiteSpace: 'nowrap' }}>
                                 <IconButton
                                   size="small"
-                                  onClick={() => voteDown(proposition)}
+                                  onClick={() =>
+                                    vote(topic, proposition, false)
+                                  }
                                   aria-label="vote down"
                                 >
-                                  <ThumbDownOffAltIcon fontSize="small" />
+                                  <ThumbDownOffAltIcon
+                                    sx={{
+                                      color:
+                                        proposition.vote === false
+                                          ? voteDownColor
+                                          : noVoteColor,
+                                    }}
+                                    fontSize="small"
+                                  />
                                 </IconButton>
-                                <span style={{ fontSize: '14px' }}>(5)</span>
+                                <span style={{ fontSize: '14px' }}>
+                                  {proposition.votes_down})
+                                </span>
                               </span>
                             </Grid>
                           </Grid>
@@ -313,6 +394,17 @@ const TopicsList = () => {
         deleteApiPath={`/api/topic/${topicsList[deleteIndex]?.id}`}
         deleteTitle="Delete topic ?"
         deleteText="Deleting the topic can't be undone."
+      />
+      <DeleteConfirmDialog
+        control={archiveDialog}
+        onDelete={() => {
+          archiveTopic();
+        }}
+        deleteApiPath={`/api/topic/${topicsList[archiveIndex]?.id}/archive`}
+        deleteMethod="POST"
+        deleteTitle="Archive topic ?"
+        deleteText="The topic will be transfered to the archived topics and votes or comments will be frozen."
+        deleteAction="Archive"
       />
     </Stack>
   );
