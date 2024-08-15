@@ -117,6 +117,61 @@ export class Topic {
       values (${voteItemId}, ${memberId}, ${isYes})`;
   }
 
+  async comment(voteItemId, commentId, discussion) {
+    const { sql } = this.connection;
+
+    const { id: topicId, community_id: communityId } = this.getData();
+    const hoaUserId = this.hoaUserId;
+
+    await sql`insert into comment(
+                topic_id,
+                vote_item_id,
+                comment_id,
+                discussion,
+                member_id
+              ) values (
+                ${topicId},
+                ${voteItemId},
+                ${commentId},
+                ${discussion},
+                (select id 
+                 from member
+                 where community_id = ${communityId} and
+                       hoauser_id = ${hoaUserId})
+              )`;
+  }
+
+  async removeComment(id) {
+    const { sql } = this.connection;
+    const { id: topicId, community_id: communityId } = this.getData();
+
+    await sql`
+      delete from comment
+      where
+        id = ${id} and
+        topic_id = ${topicId}
+        and member_id = (
+          select id from member
+          where community_id = ${communityId}
+          and hoauser_id = ${this.hoaUserId})`;
+  }
+
+  async changeComment(id, discussion) {
+    const { sql } = this.connection;
+    const { id: topicId, community_id: communityId } = this.getData();
+
+    await sql`
+      update comment
+      set discussion = ${discussion}
+      where
+        id = ${id} and
+        topic_id = ${topicId}
+        and member_id = (
+          select id from member
+          where community_id = ${communityId}
+          and hoauser_id = ${this.hoaUserId})`;
+  }
+
   static async create(
     connection,
     communityId,
@@ -202,6 +257,7 @@ export class Topic {
       proposition.votes_up = 0;
       proposition.votes_down = 0;
       proposition.vote = null;
+      proposition.comments = [];
       topicsById[proposition.topic_id].propositions.push(proposition);
       propositionsById[proposition.id] = proposition;
     });
@@ -231,6 +287,28 @@ export class Topic {
       Object.assign(propositionsById[vote.vote_item_id], vote);
     });
 
+    const comments = await sql`
+        select * from comment 
+        where topic_id in (
+            select id from topic 
+            where community_id=${communityId})
+            order by id asc`;
+
+    const commentsById = {};
+    comments.forEach((comment) => {
+      comment.comments = [];
+      commentsById[comment.id] = comment;
+      let subComments;
+      if (comment.vote_item_id) {
+        const proposition = propositionsById[comment.vote_item_id];
+        subComments = proposition.comments;
+      } else {
+        const prevComment = commentsById[comment.comment_id];
+        subComments = prevComment.comments;
+      }
+      subComments.push(comment);
+    });
+
     return topics;
   }
 
@@ -255,6 +333,7 @@ export class Topic {
       proposition.votes_up = 0;
       proposition.votes_down = 0;
       proposition.vote = null;
+      proposition.comments = [];
       propositionsById[proposition.id] = proposition;
     });
 
@@ -276,6 +355,26 @@ export class Topic {
 
     votes.forEach((vote) => {
       Object.assign(propositionsById[vote.vote_item_id], vote);
+    });
+
+    const comments = await sql`
+        select * from comment 
+        where topic_id = ${id}
+        order by id asc`;
+
+    const commentsById = {};
+    comments.forEach((comment) => {
+      comment.comments = [];
+      commentsById[comment.id] = comment;
+      let subComments;
+      if (comment.vote_item_id) {
+        const proposition = propositionsById[comment.vote_item_id];
+        subComments = proposition.comments;
+      } else {
+        const prevComment = commentsById[comment.comment_id];
+        subComments = prevComment.comments;
+      }
+      subComments.push(comment);
     });
 
     return new Topic(connection, topic, hoaUserId);
@@ -388,6 +487,48 @@ export function topicApi(connection, app) {
       const hoaUserId = hoaUserInst.getData().id;
       const topicInst = await Topic.get(connection, hoaUserId, topicId);
       topicInst.archive();
+      res.json({ ok: true });
+    }),
+  );
+
+  app.post(
+    '/api/comment/:topicId',
+    handleErrors(async (req, res) => {
+      const { topicId } = req.params;
+      const {
+        vote_item_id: voteItemId,
+        comment_id: commentId,
+        discussion,
+      } = req.body;
+      const hoaUserInst = await getUser(connection, req);
+      const hoaUserId = hoaUserInst.getData().id;
+      const topicInst = await Topic.get(connection, hoaUserId, topicId);
+      topicInst.comment(voteItemId || null, commentId || null, discussion);
+      res.json({ ok: true });
+    }),
+  );
+
+  app.put(
+    '/api/comment/:topicId',
+    handleErrors(async (req, res) => {
+      const { topicId } = req.params;
+      const { id, discussion } = req.body;
+      const hoaUserInst = await getUser(connection, req);
+      const hoaUserId = hoaUserInst.getData().id;
+      const topicInst = await Topic.get(connection, hoaUserId, topicId);
+      topicInst.changeComment(id, discussion);
+      res.json({ ok: true });
+    }),
+  );
+
+  app.delete(
+    '/api/comment/:topicId/:id',
+    handleErrors(async (req, res) => {
+      const { topicId, id } = req.params;
+      const hoaUserInst = await getUser(connection, req);
+      const hoaUserId = hoaUserInst.getData().id;
+      const topicInst = await Topic.get(connection, hoaUserId, topicId);
+      await topicInst.removeComment(id);
       res.json({ ok: true });
     }),
   );

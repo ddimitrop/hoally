@@ -1,4 +1,3 @@
-import Box from '@mui/material/Box';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
@@ -120,7 +119,6 @@ const AddTopic = ({ topic, member, done, setChanged }) => {
       ref={addTopicForm}
       component="form"
       container
-      spacing={1}
       sx={{ flexGrow: '1', maxWidth: 'md' }}
       onSubmit={(event) => {
         event.preventDefault();
@@ -138,26 +136,31 @@ const AddTopic = ({ topic, member, done, setChanged }) => {
           fullWidth
           autoComplete="no-auto-complete"
           variant="standard"
+          size="small"
           autoFocus
           inputRef={subject}
           onChange={checkWasChanged}
         />
       </Grid>
-      <Grid item md={3} xs={5}>
-        <Box sx={{ display: 'flex', justifyContent: 'end' }}>
-          <FormControl>
-            <InputLabel id="topic-type">Type</InputLabel>
-            <Select
-              labelId="topic-type"
-              value={type}
-              label="Type"
-              onChange={handleTypeChange}
-            >
-              <MenuItem value={'announcement'}>Announcement</MenuItem>
-              <MenuItem value={'proposition'}>Proposition</MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
+      <Grid
+        item
+        md={3}
+        xs={5}
+        sx={{ display: 'flex', justifyContent: 'end', alignItems: 'end' }}
+      >
+        <FormControl size="small" dense="none">
+          <InputLabel id="topic-type">Type</InputLabel>
+          <Select
+            labelId="topic-type"
+            value={type}
+            label="Type"
+            size="small"
+            onChange={handleTypeChange}
+          >
+            <MenuItem value={'announcement'}>Announcement</MenuItem>
+            <MenuItem value={'proposition'}>Proposition</MenuItem>
+          </Select>
+        </FormControl>
       </Grid>
       <Grid item xs={12}>
         <TextField
@@ -169,6 +172,7 @@ const AddTopic = ({ topic, member, done, setChanged }) => {
           fullWidth
           autoComplete="no-auto-complete"
           variant="standard"
+          size="small"
           inputRef={description}
           onChange={checkWasChanged}
         />
@@ -195,6 +199,7 @@ const AddTopic = ({ topic, member, done, setChanged }) => {
                   value={proposition.description}
                   autoComplete="no-auto-complete"
                   variant="standard"
+                  size="small"
                   onChange={(event) => changeVoteDescription(i, event)}
                 />
               </Grid>
@@ -209,7 +214,11 @@ const AddTopic = ({ topic, member, done, setChanged }) => {
                 }}
               >
                 {hasAddButton(i) ? (
-                  <Button variant="outlined" onClick={addProposition}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={addProposition}
+                  >
                     Add option
                   </Button>
                 ) : (
@@ -242,14 +251,14 @@ const AddTopic = ({ topic, member, done, setChanged }) => {
         }}
       >
         <Button
-          variant="outlined"
+          size="small"
           onClick={() => {
             done();
           }}
         >
           Cancel
         </Button>
-        <Button variant="contained" type="submit">
+        <Button size="small" variant="contained" type="submit">
           {isNewTopic() ? 'Post' : 'Change'}
         </Button>
       </Grid>

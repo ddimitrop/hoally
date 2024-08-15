@@ -93,12 +93,14 @@ CREATE TYPE tag_enum AS ENUM ('complaints', 'ideas', 'garden', 'maintenance', 'f
 
 CREATE TYPE topic_type_enum AS ENUM ('proposition', 'announcement');
 
--- A discussion topic of an HOA community. A topic can have multiple vote items.
+-- A discussion topic of an HOA community. A topic must have at least one or multiple vote items.
 CREATE TABLE topic (
     id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     community_id INTEGER NOT NULL REFERENCES community(id) ON DELETE CASCADE,
     -- when a member leaves the community the topics remain as orphan.
     member_id INTEGER REFERENCES member(id) ON DELETE SET NULL,
+    -- Announcements have a single implicit vote item and can only be "liked"
+    -- (all their votes are is_yes = true)
     type topic_type_enum NOT NULL,
     subject varchar(500) NOT NULL,
     description text,
@@ -145,9 +147,9 @@ CREATE TABLE comment (
     images varchar(100)[5],
     documents varchar(100)[5],
     CONSTRAINT single_parent CHECK (
-        -- both vote_item_id or comment_id can be null (in which case the comment applies to topic)
-        -- but just one of them at most may be not null.
-        vote_item_id IS NULL OR comment_id is NULL
+        -- exactly one of them must be null and the other not null.
+        (vote_item_id IS NULL AND comment_id IS NOT NULL) OR
+        (vote_item_id IS NOT NULL AND comment_id IS NULL)
     )
 );
 

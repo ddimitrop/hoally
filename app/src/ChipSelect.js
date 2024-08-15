@@ -37,8 +37,10 @@ export default function ChipSelect({ options, id, label, value, onChange }) {
   }
 
   return (
-    <FormControl fullWidth>
-      <InputLabel id={`${id}-label`}>{label}</InputLabel>
+    <FormControl fullWidth size="small" sx={{ marginTop: '16px' }}>
+      <InputLabel size="small" id={`${id}-label`}>
+        {label}
+      </InputLabel>
       <Select
         labelId={`${id}-label`}
         id={id}
@@ -48,7 +50,7 @@ export default function ChipSelect({ options, id, label, value, onChange }) {
         open={open}
         onClose={handleClose}
         onOpen={handleOpen}
-        input={<OutlinedInput fullWidth label={label} />}
+        input={<OutlinedInput fullWidth size="small" label={label} />}
         renderValue={(selected) => (
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
             {selected.map((value) => (
