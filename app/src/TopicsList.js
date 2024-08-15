@@ -20,7 +20,6 @@ import ListItemText from '@mui/material/ListItemText';
 import { Global } from './Global.js';
 import { useLoaderData } from 'react-router-dom';
 import { useState, useContext, Fragment } from 'react';
-import Divider from '@mui/material/Divider';
 import { getData, postData } from './json-utils.js';
 import AddTopic from './AddTopic.js';
 import { red } from '@mui/material/colors';
@@ -29,6 +28,7 @@ import ConfirmDialog from './ConfirmDialog.js';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
 import { flagState } from './state-utils.js';
 import { useTheme } from '@mui/material/styles';
+import CommentsList from './CommentsList';
 
 const TopicsList = () => {
   const global = useContext(Global);
@@ -43,6 +43,7 @@ const TopicsList = () => {
   let [onCancel, setOnCancel] = useState({ callback: () => {} });
   const cancelDialog = flagState(useState(false));
   let [voteCount, setVoteCount] = useState(0);
+  const [commentCancel, setCommentCancel] = useState(null);
 
   const voteUpColor = green[800];
   const voteDownColor = red[800];
@@ -54,19 +55,27 @@ const TopicsList = () => {
       setOnCancel({ callback });
       cancelDialog.open();
     } else {
+      clearEdits();
       callback();
     }
   };
 
+  const clearEdits = () => {
+    setTopicEdit(null);
+    setTopicAdd(false);
+    setTopicChanged(false);
+    commentCancel?.callback();
+    setCommentCancel(null);
+  };
+
   const cancelTopic = () => {
-    editDone();
+    clearEdits();
     cancelDialog.close();
     onCancel.callback();
   };
 
   const postTopic = () => {
     checkChange(() => {
-      setTopicEdit(null);
       setTopicAdd(true);
     });
   };
@@ -77,9 +86,7 @@ const TopicsList = () => {
         topicsList.push(topic);
       }
     }
-    setTopicAdd(false);
-    setTopicEdit(null);
-    setTopicChanged(false);
+    clearEdits();
   };
 
   const data = useLoaderData();
@@ -101,21 +108,20 @@ const TopicsList = () => {
   }
 
   const topicTags = (topic) =>
-    topic.tags.length
-      ? ' - ' + topic.tags.map((tag) => `#${tag}`).join(', ')
-      : '';
+    topic.tags.length ? topic.tags.map((tag) => `#${tag}`).join(', ') : '';
 
   const editTopic = (i) => {
     checkChange(() => {
-      setTopicEdit(i);
-      setTopicAdd(false);
+      setTimeout(() => setTopicEdit(i), 0);
     });
   };
 
   const confirmDelete = (i) => {
-    // We show the list in reverse.
-    setDeleteIndex(topicsList.length - 1 - i);
-    deleteDialog.open();
+    checkChange(() => {
+      // We show the list in reverse.
+      setDeleteIndex(topicsList.length - 1 - i);
+      deleteDialog.open();
+    });
   };
 
   const deleteTopic = () => {
@@ -124,9 +130,11 @@ const TopicsList = () => {
   };
 
   const confirmArchive = (i) => {
-    // We show the list in reverse.
-    setArchiveIndex(topicsList.length - 1 - i);
-    archiveDialog.open();
+    checkChange(() => {
+      // We show the list in reverse.
+      setArchiveIndex(topicsList.length - 1 - i);
+      archiveDialog.open();
+    });
   };
 
   const archiveTopic = () => {
@@ -139,41 +147,44 @@ const TopicsList = () => {
   };
 
   const vote = (topic, proposition, vote) => {
-    if (proposition.vote === vote) {
-      vote = null;
-    }
-    postData(`/api/topic/${topic.id}/vote/${proposition.id}`, {
-      vote,
-    })
-      .then(() => {
-        if (proposition.vote === true) {
-          proposition.votes_up--;
-        } else if (proposition.vote === false) {
-          proposition.votes_down--;
-        }
-        proposition.vote = vote;
-        if (vote === true) {
-          proposition.votes_up++;
-        } else if (vote === false) {
-          proposition.votes_down++;
-        }
-        setVoteCount(voteCount + 1);
+    checkChange(() => {
+      if (proposition.vote === vote) {
+        vote = null;
+      }
+      postData(`/api/topic/${topic.id}/vote/${proposition.id}`, {
+        vote,
       })
-      .catch(({ message }) => {
-        global.setAppError(message);
-      });
+        .then(() => {
+          if (proposition.vote === true) {
+            proposition.votes_up--;
+          } else if (proposition.vote === false) {
+            proposition.votes_down--;
+          }
+          proposition.vote = vote;
+          if (vote === true) {
+            proposition.votes_up++;
+          } else if (vote === false) {
+            proposition.votes_down++;
+          }
+          setVoteCount(voteCount + 1);
+        })
+        .catch(({ message }) => {
+          global.setAppError(message);
+        });
+    });
   };
 
   const hasVotes = (topic) =>
-    topic.propositions.some((p) => p.votes_up != 0 || p.votes_down != 0);
+    topic.propositions.some((p) => p.votes_up !== 0 || p.votes_down !== 0);
 
   return (
-    <Stack spacing={1}>
+    <Stack>
       <Stack direction="row" justifyContent="space-between">
         <TextField
           id="outlined-basic"
           label="Search posts"
           variant="outlined"
+          size="small"
           sx={{ flexGrow: 1, maxWidth: 'md', paddingRight: '8px' }}
         />
         <Box sx={{ display: 'flex', justifyContent: 'end' }}>
@@ -185,12 +196,7 @@ const TopicsList = () => {
       </Stack>
       {topicAdd ? (
         <Fragment>
-          <Divider />
-          <Stack
-            direction="row"
-            justifyContent="start"
-            sx={{ paddingTop: '16px' }}
-          >
+          <Stack direction="row" justifyContent="start">
             <AddTopic
               done={editDone}
               topic={{ type: 'proposition' }}
@@ -198,7 +204,6 @@ const TopicsList = () => {
               setChanged={setTopicChanged}
             />
           </Stack>
-          <Divider />
         </Fragment>
       ) : (
         ''
@@ -283,7 +288,21 @@ const TopicsList = () => {
                           sx={{ fontSize: '14px' }}
                           xs={topic.type === 'announcement' ? 9 : 12}
                         >
-                          {topic.description + topicTags(topic)}
+                          {topic.description}
+                          <br></br>
+                          {topicTags(topic)}
+                          {topic.type === 'announcement' ? (
+                            <CommentsList
+                              checkChange={checkChange}
+                              setChanged={setTopicChanged}
+                              setCommentCancel={setCommentCancel}
+                              comments={topic.propositions[0].comments}
+                              topicId={topic.id}
+                              propositionId={topic.propositions[0].id}
+                            />
+                          ) : (
+                            ''
+                          )}
                         </Grid>
                         {topic.type === 'announcement' ? (
                           <Grid item xs={3} sx={{ whiteSpace: 'nowrap' }}>
@@ -319,11 +338,19 @@ const TopicsList = () => {
                   }}
                 >
                   {topic.type === 'proposition'
-                    ? topic.propositions.map((proposition) => (
+                    ? topic.propositions.map((proposition, j) => (
                         <Box key={proposition.id}>
                           <Grid container>
                             <Grid item xs={9}>
                               <b>Proposition:</b> {proposition.description}
+                              <CommentsList
+                                checkChange={checkChange}
+                                setChanged={setTopicChanged}
+                                setCommentCancel={setCommentCancel}
+                                comments={proposition.comments}
+                                topicId={topic.id}
+                                propositionId={proposition.id}
+                              />
                             </Grid>
                             <Grid item xs={3}>
                               <span style={{ whiteSpace: 'nowrap' }}>
