@@ -1,5 +1,10 @@
 import { handleErrors } from '../../app/src/errors.mjs';
 import { getUser } from './hoauser.mjs';
+import { Community } from './community.mjs';
+import { toDataURL } from 'qrcode';
+import { JSDOM } from 'jsdom';
+import { marked } from 'marked';
+import domPurify from 'dompurify';
 
 export class Member {
   constructor(connection, data, hoaUserId) {
@@ -76,6 +81,21 @@ export class Member {
               is_admin = true)`;
   }
 
+  async generateInvitation() {
+    const { sql, crypto } = this.connection;
+    const id = this.getData().id;
+    const token = crypto.uuid();
+    const hashedToken = crypto.hash(token);
+
+    await sql`
+      update member
+      set hashed_token = ${hashedToken},
+          token_creation_timestamp = LOCALTIMESTAMP
+      where id = ${id}`;
+
+    return token;
+  }
+
   static async create(
     connection,
     communityId,
@@ -147,6 +167,8 @@ export class Member {
       select       
         m.id,  
         m.address,
+        m.encrypted_invitation_full_name,
+        m.encrypted_invitation_email,
         m.is_admin,
         m.is_board_member,
         m.is_moderator,
@@ -170,6 +192,8 @@ export class Member {
       select       
         m.id,  
         m.address,
+        m.encrypted_invitation_full_name,
+        m.encrypted_invitation_email,
         m.is_admin,
         m.is_board_member,
         m.is_moderator
@@ -272,6 +296,93 @@ export function memberApi(connection, app) {
       const hoaUserId = hoaUserInst.getData().id;
       const member = await Member.forUser(connection, hoaUserId, communityId);
       res.json(member.getData());
+    }),
+  );
+
+  app.post(
+    '/api/member/invitation',
+    handleErrors(async (req, res) => {
+      const { communityId, ids, byEmail } = req.body;
+      const hoaUserInst = await getUser(connection, req);
+      const { id: hoaUserId, name: adminName } = hoaUserInst.getData();
+      const communityInst = await Community.get(
+        connection,
+        hoaUserId,
+        communityId,
+      );
+      let { invitation_text: invitationText, name: communityName } =
+        communityInst.getData();
+      if (byEmail) {
+        invitationText = invitationText.replaceAll(
+          /__POST_ONLY_START[\s\S]*__POST_ONLY_END/g,
+          '',
+        );
+        invitationText = invitationText.replaceAll(/__EMAIL_ONLY_START/g, '');
+        invitationText = invitationText.replaceAll(/__EMAIL_ONLY_END/g, '');
+      } else {
+        invitationText = invitationText.replaceAll(
+          /__EMAIL_ONLY_START[\s\S]*__EMAIL_ONLY_END/g,
+          '',
+        );
+        invitationText = invitationText.replaceAll(/__POST_ONLY_START/g, '');
+        invitationText = invitationText.replaceAll(/__POST_ONLY_END/g, '');
+      }
+      const invitationData = [];
+      const invitations = [];
+      for (const id of ids) {
+        const member = await Member.get(connection, hoaUserId, id);
+        const invitationToken = await member.generateInvitation();
+        const invitationUrl = `${req.headers.origin}/invitation/${invitationToken}`;
+        const unregistrationUrl = `${req.headers.origin}/unregister/${invitationToken}`;
+        const invitationQr = await toDataURL(invitationUrl);
+        const unregistrationQr = await toDataURL(unregistrationUrl);
+
+        const {
+          invitation_full_name: invitationFullName,
+          invitation_email: invitationEmail,
+          address,
+        } = member.getData();
+
+        const invitation = invitationText
+          .replace('<invitation_name>', invitationFullName || 'neighbor')
+          .replace('<community_name>', communityName)
+          .replace('<address>', address)
+          .replaceAll('<invitation_link>', invitationUrl)
+          .replaceAll('<unregistration_link>', unregistrationUrl)
+          .replaceAll('<invitation_qr>', invitationQr)
+          .replaceAll('<unregistration_qr>', unregistrationQr)
+          .replace('<admin_name>', adminName);
+
+        invitationData.push({ invitation, invitationEmail });
+        invitations.push(invitation);
+      }
+      if (byEmail) {
+        const { sendMail } = connection;
+        const window = new JSDOM('').window;
+        const purify = domPurify(window);
+
+        const sendNextInvitation = () => {
+          const { invitation, invitationEmail } = invitationData.shift();
+          console.log(`invitation ${invitation}`);
+          const markedHtml = marked.parse(invitation);
+          console.log(`markedHtml ${markedHtml}`);
+          const html = purify.sanitize(markedHtml);
+          console.log(`html ${html}`);
+          sendMail(
+            invitationEmail,
+            `You are invited to join Hoally for ${communityName}`,
+            html,
+          );
+        };
+        const processInvitations = () => {
+          if (invitationData.length) {
+            sendNextInvitation();
+            setTimeout(processInvitations, 500);
+          }
+        };
+        processInvitations();
+      }
+      res.json({ invitations });
     }),
   );
 }

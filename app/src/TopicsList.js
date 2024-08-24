@@ -1,3 +1,4 @@
+import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
@@ -10,6 +11,7 @@ import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
 import ThumbDownOffAltIcon from '@mui/icons-material/ThumbDownOffAlt';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import ArchiveOutlinedIcon from '@mui/icons-material/ArchiveOutlined';
+import HolidayVillageOutlinedIcon from '@mui/icons-material/HolidayVillageOutlined';
 import BallotIcon from '@mui/icons-material/Ballot';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
@@ -19,7 +21,7 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import { Global } from './Global.js';
 import { useLoaderData } from 'react-router-dom';
-import { useState, useContext, Fragment } from 'react';
+import { useState, useContext, Fragment, dangerouslySetInnerHTML } from 'react';
 import { getData, postData } from './json-utils.js';
 import AddTopic from './AddTopic.js';
 import { red } from '@mui/material/colors';
@@ -29,9 +31,13 @@ import DeleteConfirmDialog from './DeleteConfirmDialog';
 import { flagState } from './state-utils.js';
 import { useTheme } from '@mui/material/styles';
 import CommentsList from './CommentsList';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
+import './Markdown.css';
 
 const TopicsList = () => {
   const global = useContext(Global);
+  const purify = DOMPurify(window);
   const theme = useTheme();
   let [topicAdd, setTopicAdd] = useState(false);
   let [topicEdit, setTopicEdit] = useState(null);
@@ -44,6 +50,16 @@ const TopicsList = () => {
   const cancelDialog = flagState(useState(false));
   let [voteCount, setVoteCount] = useState(0);
   const [commentCancel, setCommentCancel] = useState(null);
+
+  const isHiddenIntro = () => {
+    return Date.now() < Number(localStorage.getItem('hiddenIntro'));
+  };
+
+  const hideIntroFormSecs = (secs) => {
+    localStorage.setItem('hiddenIntro', Date.now() + secs * 1000);
+  };
+
+  const [hiddenIntro, setHiddenIntro] = useState(isHiddenIntro());
 
   const voteUpColor = green[800];
   const voteDownColor = red[800];
@@ -93,6 +109,12 @@ const TopicsList = () => {
   const { error } = data;
   if (error) {
     global.setAppError(error);
+  }
+
+  const community = data.community || {};
+  const { error: communityError } = community;
+  if (communityError) {
+    global.setAppError(communityError);
   }
 
   const member = data.member || {};
@@ -177,16 +199,47 @@ const TopicsList = () => {
   const hasVotes = (topic) =>
     topic.propositions.some((p) => p.votes_up !== 0 || p.votes_down !== 0);
 
+  const getIntro = () => {
+    const intro = community.intro.replace('<community_name>', community.name);
+    const markedHtml = marked.parse(intro);
+    return purify.sanitize(markedHtml);
+  };
+
+  const hideIntro = () => {
+    hideIntroFormSecs(60 * 60 * 24);
+    setHiddenIntro(true);
+  };
+
   return (
     <Stack>
       <Stack direction="row" justifyContent="space-between">
-        <TextField
-          id="outlined-basic"
-          label="Search posts"
-          variant="outlined"
-          size="small"
-          sx={{ flexGrow: 1, maxWidth: 'md', paddingRight: '8px' }}
-        />
+        <Box sx={{ flexGrow: 1, maxWidth: 'md', paddingRight: '8px' }}>
+          {!hiddenIntro ? (
+            <Alert
+              icon={<HolidayVillageOutlinedIcon fontSize="inherit" />}
+              severity="success"
+              onClose={hideIntro}
+            >
+              <div
+                className="markdown"
+                dangerouslySetInnerHTML={{ __html: getIntro() }}
+              ></div>
+            </Alert>
+          ) : (
+            ''
+          )}
+        </Box>
+        {false ? (
+          <TextField
+            id="outlined-basic"
+            label="Search posts"
+            variant="outlined"
+            size="small"
+            sx={{ flexGrow: 1, maxWidth: 'md', paddingRight: '8px' }}
+          />
+        ) : (
+          ''
+        )}
         <Box sx={{ display: 'flex', justifyContent: 'end' }}>
           <Fab color="primary" variant="extended" onClick={postTopic}>
             <PostAddIcon sx={{ mr: 1 }} />
@@ -211,7 +264,7 @@ const TopicsList = () => {
       {!topicsList.length && !topicAdd ? (
         <Box
           sx={{
-            paddingTop: '16px',
+            paddingTop: '64px',
             fontSize: '18px',
             opacity: '0.5',
             textAlign: 'center',
@@ -439,9 +492,10 @@ const TopicsList = () => {
 
 export async function topicsLoader({ params: { communityId } }) {
   try {
+    const community = await getData(`/api/community/${communityId}`);
     const member = await getData(`/api/member/user/${communityId}`);
     const topics = await getData(`/api/topic/${communityId}`);
-    return { member, topics };
+    return { community, member, topics };
   } catch ({ message: error }) {
     return { error };
   }
