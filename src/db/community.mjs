@@ -58,6 +58,27 @@ export class Community {
     this.data = data;
   }
 
+  async updateIntro(intro, invitationText) {
+    const { sql } = this.connection;
+    const hoaUserId = this.hoaUserId;
+    const id = this.getData().id;
+    if (!intro) intro = DEFAULT_INTRO;
+    if (!invitationText) invitationText = DEFAULT_INVITATION_TEXT;
+    await sql`
+      update community
+      set intro = ${intro},
+          invitation_text = ${invitationText}
+       where
+        id = ${id} and
+        id in (select community_id 
+               from member 
+              where hoauser_id = ${hoaUserId} and
+              is_admin = true)     
+    `;
+    this.data.intro = intro;
+    this.data.invitation_text = invitationText;
+  }
+
   async remove() {
     const { sql } = this.connection;
     const id = this.getData().id;
@@ -91,13 +112,17 @@ export class Community {
         address,
         city,
         state,
-        zipcode
+        zipcode,
+        intro,
+        invitation_text
       ) values (
         ${name},
         ${address},
         ${city},
         ${state},
-        ${zipcode}  
+        ${zipcode}
+        ${DEFAULT_INTRO}
+        ${DEFAULT_INVITATION_TEXT}
       )
 
       returning *
@@ -156,6 +181,8 @@ export class Community {
         c.city,
         c.state,
         c.zipcode,
+        c.intro,
+        c.invitation_text,
         m.address as admin_address,
         m.is_admin 
         from community c 
@@ -167,6 +194,36 @@ export class Community {
     return new Community(connection, community, hoaUserId);
   }
 }
+
+const DEFAULT_INTRO = `# Welcome to <community_name> community.
+
+On this site, you can stay informed about announcements and proposals regarding ongoing issues. You can also share your opinions by voting, commenting, and posting your own announcements or proposals.
+
+Please keep your posts and comments respectful to maintain a harmonious community atmosphere. Note that your nickname and address will be visible to your neighbors, and inappropriate language may be moderated. However, voting and liking are anonymous, allowing you to express your opinions without worrying about jeopardizing your friendships with your neighbors.`;
+
+const DEFAULT_INVITATION_TEXT = `#### Dear <invitation_name> - owner of the property at <address>,
+
+You are invited to join the <community_name> community on Hoally.  
+On this site, you will be able to stay informed about announcements and proposals regarding ongoing community issues.  
+You can also share your opinions by voting, commenting, and posting your own announcements or proposals.  
+Please [follow the invitation link](<invitation_link>) to sign up and participate in our communitity.  
+__EMAIL_ONLY_START
+If you received this message by mistake, please [follow the unregistration link](<unregistration_link>) to stop receiving messages.
+__EMAIL_ONLY_END
+
+__POST_ONLY_START
+---
+
+**Invitation link**:  
+![Invitation QR code](<invitation_qr>)  
+[<invitation_link>](<invitation_link>)  
+
+---	
+__POST_ONLY_END
+
+Best regards,  
+<admin_name>,  
+Your Hoally community admin.`;
 
 export function communityApi(connection, app) {
   /** Creates a new community. */
@@ -256,6 +313,18 @@ export function communityApi(connection, app) {
       const hoaUserId = hoaUserInst.getData().id;
       const community = await Community.get(connection, hoaUserId, id);
       await community.remove();
+      res.json({ ok: true });
+    }),
+  );
+
+  app.post(
+    '/api/community/intro',
+    handleErrors(async (req, res) => {
+      const { id, intro, invitation_text: invitationText } = req.body;
+      const hoaUserInst = await getUser(connection, req);
+      const hoaUserId = hoaUserInst.getData().id;
+      const communityInst = await Community.get(connection, hoaUserId, id);
+      await communityInst.updateIntro(intro, invitationText);
       res.json({ ok: true });
     }),
   );

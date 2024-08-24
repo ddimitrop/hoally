@@ -30,6 +30,8 @@ CREATE TABLE community (
     state state_enum NOT NULL,
     zipcode VARCHAR(5) NOT NULL 
         CONSTRAINT us_zip_code CHECK (regexp_like(zipcode, '^\d{5}$')),
+    intro TEXT NOT NULL DEFAULT '',
+    invitation_text TEXT NOT NULL DEFAULT '',
     icon_file VARCHAR(100),
     creation_timestamp TIMESTAMP DEFAULT LOCALTIMESTAMP,
     last_update_timestamp TIMESTAMP

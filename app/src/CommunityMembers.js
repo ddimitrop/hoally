@@ -109,7 +109,7 @@ const CommunityMembers = ({ stepper, members }) => {
   return (
     <Fragment>
       <Stack spacing={1} sx={{ flexGrow: '1' }}>
-        <Container sx={{ flexGrow: '1', overflow: 'scroll' }}>
+        <Stack sx={{ flexGrow: '1', overflow: 'scroll' }}>
           <List>
             {members.map((member, i) =>
               memberEdit === i ? (
@@ -212,6 +212,7 @@ const CommunityMembers = ({ stepper, members }) => {
               flexGrow: '1',
               display: 'flex',
               justifyContent: 'end',
+              alignItems: 'start',
               padding: '16px 0',
             }}
           >
@@ -228,7 +229,7 @@ const CommunityMembers = ({ stepper, members }) => {
               </Button>
             )}
           </Box>
-        </Container>
+        </Stack>
         <Stack direction="row" spacing={2} justifyContent="end">
           <Button onClick={prevStep}>Go Back</Button>
           <Button variant="contained" onClick={nextStep}>

@@ -1,0 +1,14 @@
+.markdown {
+  font-size: 14px;
+}
+
+.markdown h1 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.markdown p {
+  margin-block-start: 0.5em;
+  margin-block-end: 0.5em;
+}

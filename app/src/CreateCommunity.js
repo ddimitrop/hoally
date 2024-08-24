@@ -7,7 +7,7 @@ import { useContext, useEffect, Fragment } from 'react';
 import { useLoaderData } from 'react-router-dom';
 import CommunityDetails from './CommunityDetails.js';
 import CommunityMembers from './CommunityMembers.js';
-import CommunityInvitations from './CommunityInvitations.js';
+import CommunityIntro from './CommunityIntro.js';
 import { getData } from './json-utils.js';
 import { useStepper } from './state-utils.js';
 import { Global } from './Global.js';
@@ -52,7 +52,7 @@ const CreateCommunity = () => {
             <StepLabel>Members</StepLabel>
           </Step>
           <Step key={3}>
-            <StepLabel>Invitations</StepLabel>
+            <StepLabel>Intro</StepLabel>
           </Step>
         </Stepper>
         <Stack sx={{ flexGrow: '1' }}>
@@ -63,7 +63,11 @@ const CreateCommunity = () => {
               moveNext={moveNext}
             />
             <CommunityMembers stepper={stepper} members={members} />
-            <CommunityInvitations stepper={stepper} />
+            <CommunityIntro
+              stepper={stepper}
+              community={community}
+              members={members}
+            />
           </SlideContents>
         </Stack>
       </Stack>

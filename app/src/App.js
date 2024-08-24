@@ -62,7 +62,7 @@ export default function App() {
         <Box className="App" sx={{ flexGrow: 1 }}>
           <TopBar />
           <Outlet />
-          <GlobalSnackBar />;
+          <GlobalSnackBar />
         </Box>
       </ThemeProvider>
     </Global.Provider>

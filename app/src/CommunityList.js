@@ -65,14 +65,18 @@ const CommunityList = () => {
 
   return (
     <Stack spacing={2}>
-      <Stack direction="row" justifyContent="center">
-        <TextField
-          id="outlined-basic"
-          label="Search communities"
-          variant="outlined"
-          fullWidth
-        />
-      </Stack>
+      {false ? (
+        <Stack direction="row" justifyContent="center">
+          <TextField
+            id="outlined-basic"
+            label="Search communities"
+            variant="outlined"
+            fullWidth
+          />
+        </Stack>
+      ) : (
+        ''
+      )}
       <List sx={{ flexGrow: '1' }}>
         <ListSubheader component="div" id="nested-list-subheader">
           <Typography variant="h6">My communities</Typography>
