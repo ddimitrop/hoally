@@ -41,6 +41,11 @@ const CreateCommunity = () => {
     global.setAppError(error);
   }
 
+  const { error: membersError } = members;
+  if (membersError) {
+    global.setAppError(membersError);
+  }
+
   return (
     <Fragment>
       <Stack spacing={1} sx={{ maxWidth: 'sm' }}>

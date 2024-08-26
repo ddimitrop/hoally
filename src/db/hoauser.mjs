@@ -409,6 +409,7 @@ export function hoaUserApi(connection, app) {
   app.post(
     '/api/hoauser/email/validation',
     handleErrors(async (req, res) => {
+      console.log('Will send validation email');
       await tokenEmail(
         req,
         res,

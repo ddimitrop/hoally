@@ -1,4 +1,8 @@
-import { handleErrors } from '../../app/src/errors.mjs';
+import {
+  AppError,
+  handleErrors,
+  INVITATION_TOKEN_INVALID,
+} from '../../app/src/errors.mjs';
 import { getUser } from './hoauser.mjs';
 import { Community } from './community.mjs';
 import { toDataURL } from 'qrcode';
@@ -119,9 +123,10 @@ export class Member {
         encrypted_invitation_full_name,
         encrypted_invitation_email
       ) values (
-        (select community_id from member 
+        (select min(community_id) from member 
          where community_id=${communityId} and 
-               hoauser_id=${hoaUserId}),
+               hoauser_id=${hoaUserId} and
+              is_admin = true),
         ${address},
         ${isAdmin},
         ${isBoardMember},
@@ -190,18 +195,70 @@ export class Member {
 
     const [member] = await sql`
       select       
-        m.id,  
-        m.address,
-        m.encrypted_invitation_full_name,
-        m.encrypted_invitation_email,
-        m.is_admin,
-        m.is_board_member,
-        m.is_moderator
+        min(m.id) as id,  
+        max(m.address) as address,
+        max(m.encrypted_invitation_full_name) as encrypted_invitation_full_name,
+        max(m.encrypted_invitation_email) as encrypted_invitation_email,
+        bool_or(m.is_admin) as is_admin,
+        bool_or(m.is_board_member) as is_board_member,
+        bool_or(m.is_moderator) as is_moderator,
+        count(1) as num_properties
         from member m 
         where m.community_id = ${communityId}
         and m.hoauser_id = ${hoaUserId}`;
 
     return new Member(connection, member, hoaUserId);
+  }
+
+  static async forToken(connection, token, tokenExpiration = TOKEN_EXPIRATION) {
+    const { sql, crypto } = connection;
+    const hashedToken = crypto.hash(token);
+
+    const data = await sql`
+    select       
+      m.address,
+      c.name,
+      c.id,
+      m.encrypted_invitation_email
+      from member m 
+      left join community c
+      on m.community_id = c.id
+      where m.hashed_token = ${hashedToken}
+      and now() - token_creation_timestamp < cast(${tokenExpiration} AS INTERVAL)`;
+
+    if (data.length !== 1) {
+      throw new AppError(INVITATION_TOKEN_INVALID);
+    }
+
+    const invitation = data[0];
+    invitation.invitation_email = crypto.decrypt(
+      invitation.encrypted_invitation_email,
+    );
+    delete invitation.encrypted_invitation_email;
+
+    return invitation;
+  }
+
+  static async acceptToken(
+    connection,
+    token,
+    hoaUserId,
+    tokenExpiration = TOKEN_EXPIRATION,
+  ) {
+    const { sql, crypto } = connection;
+    const hashedToken = crypto.hash(token);
+    const data = await sql`
+    update member
+    set hoauser_id = ${hoaUserId},
+        registration_timestamp = LOCALTIMESTAMP     
+    where hashed_token = ${hashedToken}
+    and now() - token_creation_timestamp < cast(${tokenExpiration} AS INTERVAL)
+
+      returning *`;
+    if (data.length !== 1) {
+      throw new AppError(INVITATION_TOKEN_INVALID);
+    }
+    return data[0];
   }
 }
 
@@ -363,11 +420,8 @@ export function memberApi(connection, app) {
 
         const sendNextInvitation = () => {
           const { invitation, invitationEmail } = invitationData.shift();
-          console.log(`invitation ${invitation}`);
           const markedHtml = marked.parse(invitation);
-          console.log(`markedHtml ${markedHtml}`);
           const html = purify.sanitize(markedHtml);
-          console.log(`html ${html}`);
           sendMail(
             invitationEmail,
             `You are invited to join Hoally for ${communityName}`,
@@ -385,4 +439,37 @@ export function memberApi(connection, app) {
       res.json({ invitations });
     }),
   );
+
+  app.post(
+    '/api/member/token',
+    handleErrors(async (req, res) => {
+      const { token } = req.body;
+      const invitation = await Member.forToken(connection, token);
+      res.json({ invitation });
+    }),
+  );
+
+  app.post(
+    '/api/member/accept',
+    handleErrors(async (req, res) => {
+      const { token, validateEmail } = req.body;
+      const hoaUserInst = await getUser(connection, req);
+      const hoaUserId = hoaUserInst.getData().id;
+      const { community_id: communityId } = await Member.acceptToken(
+        connection,
+        token,
+        hoaUserId,
+      );
+      await hoaUserInst.setDefaultCommunity(communityId);
+      if (validateEmail) {
+        await hoaUserInst.validateEmail();
+      }
+      res.json({ ok: true });
+    }),
+  );
 }
+
+/**
+ * The token expiration for invitations interval (6 months from creation).
+ */
+const TOKEN_EXPIRATION = '6 mons';

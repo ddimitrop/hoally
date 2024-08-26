@@ -48,7 +48,7 @@ export function useAlreadyUsedCheck(field, label, onUsed, onException) {
   };
 }
 
-const SingupDialog = ({ control }) => {
+const SingupDialog = ({ control, skipRedirect, defaultEmail }) => {
   const global = useContext(Global);
   const defaultLanding = useDefaultLanding();
   let [errorMessage, setErrorMessage] = useState('');
@@ -56,7 +56,9 @@ const SingupDialog = ({ control }) => {
   let [signupSuccess, setSignupSuccess] = useState(false);
   const closeSignupSuccess = () => {
     setSignupSuccess(false);
-    defaultLanding();
+    if (!skipRedirect) {
+      defaultLanding();
+    }
   };
   const closeRecoveryLinkSuccess = () => setRecoveryLinkSuccess(false);
   const form = formCapture();
@@ -122,15 +124,19 @@ const SingupDialog = ({ control }) => {
       .then((ok) => {
         if (!ok || nameUsed.hasError() || emailUsed.hasError()) return;
         return postData('/api/hoauser', data).then(({ hoaUser }) => {
+          if (defaultEmail && hoaUser.email !== defaultEmail) {
+            sendValidationEmail(hoaUser.email)
+              .then(() => {
+                setSignupSuccess(true);
+              })
+              .catch((e) => {
+                global.setAppError(e.message);
+              });
+          } else {
+            hoaUser.email_validated = true;
+          }
           global.loadHoaUser(hoaUser);
           close();
-          sendValidationEmail(hoaUser.email)
-            .then(() => {
-              setSignupSuccess(true);
-            })
-            .catch((e) => {
-              global.setAppError(e.message);
-            });
         });
       })
       .catch((e) => {
@@ -201,6 +207,7 @@ const SingupDialog = ({ control }) => {
             type="email"
             fullWidth
             variant="standard"
+            defaultValue={defaultEmail}
             autoComplete="email"
             error={emailUsed.hasError()}
             onChange={clearEmailError}

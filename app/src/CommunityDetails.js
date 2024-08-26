@@ -114,23 +114,6 @@ const CommunityDetails = ({ stepper, community, moveNext }) => {
               <Info title="The official name of the community" />
             </Grid>
             <Grid item xs={12} sx={{ display: 'flex', alignItems: 'end' }}>
-              <TextField
-                required
-                margin="dense"
-                id="admin_address"
-                name="admin_address"
-                label="Your address in the community"
-                defaultValue={community.admin_address || ''}
-                fullWidth
-                variant="standard"
-                autoComplete="street-address"
-              />
-              <Info
-                title="Your own address (street number) in the community. 
-                      You will be an admin and the first member"
-              />
-            </Grid>
-            <Grid item xs={12} sx={{ display: 'flex', alignItems: 'end' }}>
               <Box sx={{ flexGrow: '1' }}>
                 <MapsAutoComplete
                   textFieldProps={{
@@ -202,6 +185,23 @@ const CommunityDetails = ({ stepper, community, moveNext }) => {
                 fullWidth
                 variant="standard"
                 onChange={(e) => setZipValue(e.target.value)}
+              />
+            </Grid>
+            <Grid item xs={12} sx={{ display: 'flex', alignItems: 'end' }}>
+              <TextField
+                required
+                margin="dense"
+                id="admin_address"
+                name="admin_address"
+                label="Your address in the community"
+                defaultValue={community.admin_address || ''}
+                fullWidth
+                variant="standard"
+                autoComplete="street-address"
+              />
+              <Info
+                title="Your own address (street number) in the community. 
+                      You will be an admin and the first member"
               />
             </Grid>
           </Grid>
