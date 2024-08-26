@@ -1,6 +1,5 @@
 import { handleErrors } from '../../app/src/errors.mjs';
 import { getUser } from './hoauser.mjs';
-import { Member } from './member.mjs';
 
 export class Topic {
   constructor(connection, data, hoaUserId) {
@@ -99,22 +98,31 @@ export class Topic {
 
   async vote(voteItemId, isYes) {
     const { sql } = this.connection;
-    const member = await Member.forUser(
-      this.connection,
-      this.hoaUserId,
-      this.getData().community_id,
-    );
+    const hoaUserId = this.hoaUserId;
+    const communityId = this.getData().community_id;
 
-    const memberId = member.getData().id;
+    const [{ numvotes }] = await sql`
+      select count(1) as numvotes from member
+      where community_id = ${communityId}
+      and hoauser_id = ${hoaUserId}
+    `;
 
     await sql`
-      delete from vote where vote_item_id = ${voteItemId} and member_id = ${memberId}`;
+      delete from vote where vote_item_id = ${voteItemId} 
+      and member_id in (
+        select id from member
+        where community_id = ${communityId}
+        and hoauser_id = ${hoaUserId})`;
 
-    if (isYes == null) return;
+    if (isYes == null) return numvotes;
 
     await sql`
       insert into vote (vote_item_id, member_id, is_yes)
-      values (${voteItemId}, ${memberId}, ${isYes})`;
+        select ${voteItemId}, id, ${isYes} from member
+        where community_id = ${communityId} and
+              hoauser_id = ${hoaUserId}`;
+
+    return numvotes;
   }
 
   async comment(voteItemId, commentId, discussion) {
@@ -123,7 +131,7 @@ export class Topic {
     const { id: topicId, community_id: communityId } = this.getData();
     const hoaUserId = this.hoaUserId;
 
-    await sql`insert into comment(
+    const [comment] = await sql`insert into comment(
                 topic_id,
                 vote_item_id,
                 comment_id,
@@ -134,11 +142,14 @@ export class Topic {
                 ${voteItemId},
                 ${commentId},
                 ${discussion},
-                (select id 
+                (select min(id) 
                  from member
                  where community_id = ${communityId} and
                        hoauser_id = ${hoaUserId})
-              )`;
+              )
+
+              returning *`;
+    return comment;
   }
 
   async removeComment(id) {
@@ -150,7 +161,7 @@ export class Topic {
       where
         id = ${id} and
         topic_id = ${topicId}
-        and member_id = (
+        and member_id in (
           select id from member
           where community_id = ${communityId}
           and hoauser_id = ${this.hoaUserId})`;
@@ -160,16 +171,21 @@ export class Topic {
     const { sql } = this.connection;
     const { id: topicId, community_id: communityId } = this.getData();
 
-    await sql`
+    const [comment] = await sql`
       update comment
       set discussion = ${discussion}
       where
         id = ${id} and
         topic_id = ${topicId}
-        and member_id = (
+        and member_id in (
           select id from member
           where community_id = ${communityId}
-          and hoauser_id = ${this.hoaUserId})`;
+          and hoauser_id = ${this.hoaUserId})
+
+      returning *
+      `;
+
+    return comment;
   }
 
   static async create(
@@ -195,7 +211,7 @@ export class Topic {
             tags 
           ) values (
             ${communityId},
-            (select m.id from member m
+            (select min(m.id) from member m
              where m.id=${memberId} and
                    m.community_id=${communityId} and
                    m.hoauser_id=${hoaUserId}),
@@ -222,6 +238,9 @@ export class Topic {
         returning *
         `;
 
+      proposition.comments = [];
+      proposition.votes_up = 0;
+      proposition.votes_down = 0;
       topic.propositions.push(proposition);
     }
     return new Topic(connection, topic, hoaUserId);
@@ -232,7 +251,7 @@ export class Topic {
     const topics = await sql`
       select * from topic 
         where community_id = (
-          select community_id from member 
+          select max(community_id) from member 
           where community_id = ${communityId} 
             and hoauser_id = ${hoaUserId})
         and is_open = ${isOpen}`;
@@ -247,7 +266,7 @@ export class Topic {
         select v.* from vote_item v 
           join topic t on (v.topic_id = t.id) 
           where t.community_id = (
-            select community_id from member 
+            select max(community_id) from member 
             where community_id = ${communityId} 
               and hoauser_id = ${hoaUserId})
           and t.is_open = ${isOpen}`;
@@ -277,7 +296,7 @@ export class Topic {
           select v.id from vote_item v 
             join topic t on (v.topic_id = t.id) 
             where t.community_id = (
-              select community_id from member 
+              select max(community_id) from member 
               where community_id = ${communityId} 
                 and hoauser_id = ${hoaUserId})
             and t.is_open = ${isOpen})
@@ -316,8 +335,8 @@ export class Topic {
     const { sql } = connection;
     const [topic] = await sql`
       select * from topic 
-        where id = ${id} and member_id in (
-          select id from member 
+        where id = ${id} and community_id in (
+          select community_id from member 
           where hoauser_id = ${hoaUserId})`;
 
     const communityId = topic.community_id;
@@ -474,8 +493,8 @@ export function topicApi(connection, app) {
       const hoaUserInst = await getUser(connection, req);
       const hoaUserId = hoaUserInst.getData().id;
       const topicInst = await Topic.get(connection, hoaUserId, topicId);
-      topicInst.vote(voteItemId, vote);
-      res.json({ ok: true });
+      const votes = await topicInst.vote(voteItemId, vote);
+      res.json({ votes });
     }),
   );
 
@@ -503,8 +522,12 @@ export function topicApi(connection, app) {
       const hoaUserInst = await getUser(connection, req);
       const hoaUserId = hoaUserInst.getData().id;
       const topicInst = await Topic.get(connection, hoaUserId, topicId);
-      topicInst.comment(voteItemId || null, commentId || null, discussion);
-      res.json({ ok: true });
+      const comment = await topicInst.comment(
+        voteItemId || null,
+        commentId || null,
+        discussion,
+      );
+      res.json({ comment });
     }),
   );
 
@@ -516,8 +539,8 @@ export function topicApi(connection, app) {
       const hoaUserInst = await getUser(connection, req);
       const hoaUserId = hoaUserInst.getData().id;
       const topicInst = await Topic.get(connection, hoaUserId, topicId);
-      topicInst.changeComment(id, discussion);
-      res.json({ ok: true });
+      const comment = await topicInst.changeComment(id, discussion);
+      res.json({ comment });
     }),
   );
 

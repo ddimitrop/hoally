@@ -176,17 +176,20 @@ const TopicsList = () => {
       postData(`/api/topic/${topic.id}/vote/${proposition.id}`, {
         vote,
       })
-        .then(() => {
+        .then(({ votes }) => {
+          votes = Number(votes);
+          proposition.votes_up = Number(proposition.votes_up);
+          proposition.votes_down = Number(proposition.votes_down);
           if (proposition.vote === true) {
-            proposition.votes_up--;
+            proposition.votes_up -= votes;
           } else if (proposition.vote === false) {
-            proposition.votes_down--;
+            proposition.votes_down -= votes;
           }
           proposition.vote = vote;
           if (vote === true) {
-            proposition.votes_up++;
+            proposition.votes_up += votes;
           } else if (vote === false) {
-            proposition.votes_down++;
+            proposition.votes_down += votes;
           }
           setVoteCount(voteCount + 1);
         })
@@ -200,6 +203,7 @@ const TopicsList = () => {
     topic.propositions.some((p) => p.votes_up !== 0 || p.votes_down !== 0);
 
   const getIntro = () => {
+    if (!community.intro) return '';
     const intro = community.intro.replace('<community_name>', community.name);
     const markedHtml = marked.parse(intro);
     return purify.sanitize(markedHtml);
@@ -445,7 +449,7 @@ const TopicsList = () => {
                                   />
                                 </IconButton>
                                 <span style={{ fontSize: '14px' }}>
-                                  {proposition.votes_down})
+                                  ({proposition.votes_down})
                                 </span>
                               </span>
                             </Grid>

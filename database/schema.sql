@@ -84,7 +84,8 @@ CREATE TABLE member (
     is_board_member BOOLEAN NOT NULL DEFAULT false,
     is_moderator BOOLEAN NOT NULL DEFAULT false,
     creation_timestamp TIMESTAMP DEFAULT LOCALTIMESTAMP,
-    last_update_timestamp TIMESTAMP
+    last_update_timestamp TIMESTAMP,
+    registration_timestamp TIMESTAMP
 );
 
 CREATE UNIQUE INDEX ON member(community_id, address);

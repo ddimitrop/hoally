@@ -1,9 +1,8 @@
-import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import { Global } from './Global.js';
-import { useRef, useContext, useState, Fragment } from 'react';
+import { useRef, useContext, useState, useEffect, Fragment } from 'react';
 import { hasModifications } from './state-utils';
 import ConfirmDialog from './ConfirmDialog.js';
 import { postData } from './json-utils.js';
@@ -21,9 +20,9 @@ const CommunityIntro = ({ stepper, community, members }) => {
   let [onCancel, setOnCancel] = useState({ callback: () => {} });
   const invitationText = useRef(null);
   const origCommunity = { ...community };
-
-  const inviteMembers = members.filter((member) => member.hoauser_id == null);
-  const needToInvite = inviteMembers.length > 0;
+  const inviteMembers = () =>
+    members.filter((member) => member.hoauser_id == null);
+  const needToInvite = () => inviteMembers().length > 0;
 
   const getFormData = () => {
     return {
@@ -117,6 +116,7 @@ const CommunityIntro = ({ stepper, community, members }) => {
           label={'Intro'}
           type="text"
           inputRef={intro}
+          InputLabelProps={{ shrink: !!community.intro }}
           defaultValue={community.intro}
           onChange={checkIntroChanged}
           fullWidth
@@ -132,6 +132,7 @@ const CommunityIntro = ({ stepper, community, members }) => {
           label={'Invitation text'}
           type="text"
           inputRef={invitationText}
+          InputLabelProps={{ shrink: !!community.invitation_text }}
           defaultValue={community.invitation_text}
           onChange={checkIntroChanged}
           fullWidth
@@ -150,7 +151,7 @@ const CommunityIntro = ({ stepper, community, members }) => {
       </Stack>
       <Stack direction="row" spacing={2} justifyContent="end">
         <Button onClick={prevStep}>Go Back</Button>
-        {needToInvite ? (
+        {needToInvite() ? (
           <Fragment>
             <Button onClick={gotoCommunity}>Skip</Button>
             <Button variant="contained" onClick={showInvitations}>
@@ -173,7 +174,7 @@ const CommunityIntro = ({ stepper, community, members }) => {
       <InvitationsDialog
         control={invitationsDialog}
         community={community}
-        members={inviteMembers}
+        members={inviteMembers()}
       />
     </Stack>
   );

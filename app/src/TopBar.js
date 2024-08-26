@@ -33,7 +33,7 @@ const TopBar = () => {
             edge="start"
             color="inherit"
             aria-label="menu"
-            sx={{ mr: 2 }}
+            sx={{ marginRight: '4px' }}
             onClick={() => global.hoaUser.name && drawer.open()}
           >
             <MenuIcon />

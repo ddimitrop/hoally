@@ -39,11 +39,9 @@ const AddComment = ({
     comment.comment_id = commentId;
     const isNew = comment.id == null;
     return postData(`/api/comment/${topicId}`, comment, isNew ? 'POST' : 'PUT')
-      .then(({ ok }) => {
-        if (ok) {
-          comment.comments = subComments;
-          done(comment);
-        }
+      .then(({ comment }) => {
+        comment.comments = subComments;
+        done(comment);
         clearEdits();
       })
       .catch((e) => {

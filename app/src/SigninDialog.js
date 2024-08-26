@@ -13,8 +13,7 @@ import { LOGIN_ERROR } from './errors.mjs';
 import RecoveryDialog from './RecoveryDialog.js';
 import { useDefaultLanding } from './Navigate.js';
 
-const SinginDialog = (props) => {
-  const { control } = props;
+const SinginDialog = ({ control, skipRedirect }) => {
   const global = useContext(Global);
   const defaultLanding = useDefaultLanding();
   let [errorMessage, setErrorMessage] = useState('');
@@ -42,7 +41,9 @@ const SinginDialog = (props) => {
       .then(({ hoaUser, appError }) => {
         if (hoaUser) {
           global.loadHoaUser(hoaUser);
-          defaultLanding();
+          if (!skipRedirect) {
+            defaultLanding();
+          }
           close();
         } else {
           setErrorMessage(appError);

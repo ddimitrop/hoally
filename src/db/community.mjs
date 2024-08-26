@@ -120,8 +120,8 @@ export class Community {
         ${address},
         ${city},
         ${state},
-        ${zipcode}
-        ${DEFAULT_INTRO}
+        ${zipcode},
+        ${DEFAULT_INTRO},
         ${DEFAULT_INVITATION_TEXT}
       )
 
@@ -160,12 +160,14 @@ export class Community {
         c.city,
         c.state,
         c.zipcode,
-        m.address as admin_address,
-        m.is_admin 
+        max(m.address) as admin_address,
+        bool_or(m.is_admin) as is_admin 
         from community c 
         inner join member m 
         on (c.id = m.community_id) 
         where m.hoauser_id = ${hoaUserId}
+        group by c.id, c.name, c.address, c.city, c.state, c.zipcode,
+                 c.intro, c.invitation_text
         order by c.id`;
     return communities;
   }
@@ -183,13 +185,15 @@ export class Community {
         c.zipcode,
         c.intro,
         c.invitation_text,
-        m.address as admin_address,
-        m.is_admin 
+        max(m.address) as admin_address,
+        bool_or(m.is_admin) as is_admin 
         from community c 
         inner join member m 
         on (c.id = m.community_id) 
         where m.hoauser_id = ${hoaUserId}
-          and c.id = ${id}`;
+          and c.id = ${id}
+        group by c.id, c.name, c.address, c.city, c.state, c.zipcode,
+                 c.intro, c.invitation_text`;
 
     return new Community(connection, community, hoaUserId);
   }

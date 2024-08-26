@@ -15,10 +15,12 @@ import { createRoot } from 'react-dom/client';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { postData } from './json-utils.js';
+import { useNavigate } from 'react-router-dom';
 
 const InvitationsDialog = ({ control, community, members }) => {
   const global = useContext(Global);
   const purify = DOMPurify(window);
+  const navigate = useNavigate();
   const [invitationsSent, setInvitationsSent] = useState(false);
 
   const [membersSelected, setMembersSelected] = useState(true);
@@ -27,6 +29,8 @@ const InvitationsDialog = ({ control, community, members }) => {
   const defaultSelected = (useEmail) =>
     members.map((member) => !useEmail || !!member.invitation_email);
   const [selected, setSelected] = useState(defaultSelected(hasEmails));
+
+  const isSelected = (i) => selected[i] || true;
 
   const switchByEmail = (byEmail) => {
     setByEmail(byEmail);
@@ -48,6 +52,7 @@ const InvitationsDialog = ({ control, community, members }) => {
   const closeInvitationsSent = () => {
     setInvitationsSent(false);
     setByEmail(hasEmails);
+    navigate(`/topic/${community.id}`);
   };
 
   const close = () => {
@@ -160,7 +165,7 @@ const InvitationsDialog = ({ control, community, members }) => {
               key={member.id}
               control={
                 <Checkbox
-                  checked={selected[i]}
+                  checked={isSelected(i)}
                   onChange={(event) => changeSelected(i, event.target.checked)}
                   disabled={byEmail && !member.invitation_email}
                 />
