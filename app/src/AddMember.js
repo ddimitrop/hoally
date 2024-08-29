@@ -1,7 +1,9 @@
 import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Grid from '@mui/material/Grid';
+import Fade from '@mui/material/Fade';
 import TextField from '@mui/material/TextField';
+import Tooltip from '@mui/material/Tooltip';
 import Button from '@mui/material/Button';
 import { Global } from './Global.js';
 import { useRef, useEffect, useContext, useState } from 'react';
@@ -18,6 +20,7 @@ const AddMember = ({ member, done, setChanged, addresses }) => {
   const isAdmin = useRef(null);
   const isBoardMember = useRef(null);
   const isModerator = useRef(null);
+  const isObserver = useRef(null);
   const [selectNumber, setSelectNumber] = useState(true);
   const [addressInValid, setAddressInValid] = useState(false);
   const { communityId } = useParams();
@@ -39,6 +42,7 @@ const AddMember = ({ member, done, setChanged, addresses }) => {
       is_admin: isAdmin.current.checked,
       is_board_member: isBoardMember.current.checked,
       is_moderator: isModerator.current.checked,
+      is_observer: isObserver.current.checked,
     };
   };
 
@@ -136,41 +140,75 @@ const AddMember = ({ member, done, setChanged, addresses }) => {
           onChange={checkWasChanged}
         />
       </Grid>
-      <Grid item xs={9}>
-        <FormControlLabel
-          control={
-            <Checkbox
-              inputRef={isBoardMember}
-              defaultChecked={member.is_board_member}
-              onChange={checkWasChanged}
-            />
-          }
-          label="Board member"
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              inputRef={isModerator}
-              defaultChecked={member.is_moderator}
-              onChange={checkWasChanged}
-            />
-          }
-          label="Moderator"
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              inputRef={isAdmin}
-              defaultChecked={member.is_admin}
-              onChange={checkWasChanged}
-            />
-          }
-          label="Admin"
-        />
+      <Grid item xs={12}>
+        <Tooltip
+          TransitionComponent={Fade}
+          TransitionProps={{ timeout: 600 }}
+          title="A board member can archive topics and has no limits on posts."
+        >
+          <FormControlLabel
+            control={
+              <Checkbox
+                inputRef={isBoardMember}
+                defaultChecked={member.is_board_member}
+                onChange={checkWasChanged}
+              />
+            }
+            label="Board member"
+          />
+        </Tooltip>
+        <Tooltip
+          TransitionComponent={Fade}
+          TransitionProps={{ timeout: 600 }}
+          title="A moderator can temporarily hide topics and comments that are not respectful and do not follow the Hoally guidelines."
+        >
+          <FormControlLabel
+            control={
+              <Checkbox
+                inputRef={isModerator}
+                defaultChecked={member.is_moderator}
+                onChange={checkWasChanged}
+              />
+            }
+            label="Moderator"
+          />
+        </Tooltip>
+        <Tooltip
+          TransitionComponent={Fade}
+          TransitionProps={{ timeout: 600 }}
+          title="An observer can post topics and reply to comments but can not vote."
+        >
+          <FormControlLabel
+            control={
+              <Checkbox
+                inputRef={isObserver}
+                defaultChecked={member.is_observer}
+                onChange={checkWasChanged}
+              />
+            }
+            label="Observer"
+          />
+        </Tooltip>
+        <Tooltip
+          TransitionComponent={Fade}
+          TransitionProps={{ timeout: 600 }}
+          title="An admin can edit community and member properties and assign member roles."
+        >
+          <FormControlLabel
+            control={
+              <Checkbox
+                inputRef={isAdmin}
+                defaultChecked={member.is_admin}
+                onChange={checkWasChanged}
+              />
+            }
+            label="Admin"
+          />
+        </Tooltip>
       </Grid>
       <Grid
         item
-        xs={3}
+        xs={12}
         sx={{
           display: 'flex',
           justifyContent: 'end',

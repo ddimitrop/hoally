@@ -1,8 +1,10 @@
 import Stack from '@mui/material/Stack';
 import Fab from '@mui/material/Fab';
+import Box from '@mui/material/Box';
 import MapsHomeWorkTwoToneIcon from '@mui/icons-material/MapsHomeWorkTwoTone';
 import HolidayVillageTwoToneIcon from '@mui/icons-material/HolidayVillageTwoTone';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import PreviewTwoToneIcon from '@mui/icons-material/PreviewTwoTone';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
@@ -14,7 +16,7 @@ import ListSubheader from '@mui/material/ListSubheader';
 import Typography from '@mui/material/Typography';
 import { Global } from './Global.js';
 import { useNavigate, useLoaderData } from 'react-router-dom';
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, Fragment } from 'react';
 import { getData } from './json-utils.js';
 import { Info } from './Utils.js';
 import { postData } from './json-utils.js';
@@ -90,7 +92,11 @@ const CommunityList = () => {
                 aria-label="edit"
                 onClick={() => editCommunity(community.id)}
               >
-                <EditOutlinedIcon />
+                {community.is_admin ? (
+                  <EditOutlinedIcon />
+                ) : (
+                  <PreviewTwoToneIcon />
+                )}
               </IconButton>
             }
           >
@@ -103,7 +109,7 @@ const CommunityList = () => {
               </ListItemIcon>
               <ListItemText
                 primary={
-                  <Typography
+                  <Box
                     sx={{
                       display: 'flex',
                       alignItems: 'center',
@@ -111,15 +117,10 @@ const CommunityList = () => {
                     }}
                   >
                     {community.name}
-                    {community.is_admin ? (
-                      <Info
-                        title="You are an administrator of this community"
-                        icon="manage_accounts"
-                      />
-                    ) : (
-                      ''
-                    )}
-                  </Typography>
+                    <Box>
+                      <MemberRoles member={community} />
+                    </Box>
+                  </Box>
                 }
                 secondary={`${community.address}, ${community.city}`}
               />
@@ -150,5 +151,48 @@ export async function communitiesLoader() {
     return { error };
   }
 }
+
+export const MemberRoles = ({ member }) => {
+  return (
+    <Fragment>
+      {member.is_board_member ? (
+        <Info
+          sx={{ marginLeft: '12px' }}
+          title="The user is a board member: can archive topics and has no limits on posts."
+          icon="people_alt"
+        />
+      ) : (
+        ''
+      )}
+      {member.is_moderator ? (
+        <Info
+          sx={{ marginLeft: '12px' }}
+          title="The user is a moderator: can hide topics that do not respect the community guidelines."
+          icon="local_police"
+        />
+      ) : (
+        ''
+      )}
+      {member.is_observer ? (
+        <Info
+          sx={{ marginLeft: '12px' }}
+          title="The user is an observer: can view and post topics and comments but has no right to vote."
+          icon="visibility_outlined"
+        />
+      ) : (
+        ''
+      )}
+      {member.is_admin ? (
+        <Info
+          sx={{ marginLeft: '12px' }}
+          title="The user is an administrator: can add members and change their roles."
+          icon="manage_accounts"
+        />
+      ) : (
+        ''
+      )}
+    </Fragment>
+  );
+};
 
 export default CommunityList;

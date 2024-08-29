@@ -161,7 +161,10 @@ export class Community {
         c.state,
         c.zipcode,
         max(m.address) as admin_address,
-        bool_or(m.is_admin) as is_admin 
+        bool_or(m.is_admin) as is_admin,
+        bool_or(m.is_board_member) as is_board_member,
+        bool_or(m.is_moderator) as is_moderator,
+        bool_and(m.is_observer) as is_observer
         from community c 
         inner join member m 
         on (c.id = m.community_id) 
@@ -186,7 +189,10 @@ export class Community {
         c.intro,
         c.invitation_text,
         max(m.address) as admin_address,
-        bool_or(m.is_admin) as is_admin 
+        bool_or(m.is_admin) as is_admin, 
+        bool_or(m.is_board_member) as is_board_member,
+        bool_or(m.is_moderator) as is_moderator,
+        bool_and(m.is_observer) as is_observer
         from community c 
         inner join member m 
         on (c.id = m.community_id) 

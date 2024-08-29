@@ -22,7 +22,7 @@ const CommunityIntro = ({ stepper, community, members }) => {
   const origCommunity = { ...community };
   const inviteMembers = () =>
     members.filter((member) => member.hoauser_id == null);
-  const needToInvite = () => inviteMembers().length > 0;
+  const needToInvite = () => inviteMembers().length > 0 && community.is_admin;
 
   const getFormData = () => {
     return {
@@ -117,6 +117,7 @@ const CommunityIntro = ({ stepper, community, members }) => {
           type="text"
           inputRef={intro}
           InputLabelProps={{ shrink: !!community.intro }}
+          InputProps={{ readOnly: !community.is_admin }}
           defaultValue={community.intro}
           onChange={checkIntroChanged}
           fullWidth
@@ -133,6 +134,7 @@ const CommunityIntro = ({ stepper, community, members }) => {
           type="text"
           inputRef={invitationText}
           InputLabelProps={{ shrink: !!community.invitation_text }}
+          InputProps={{ readOnly: !community.is_admin }}
           defaultValue={community.invitation_text}
           onChange={checkIntroChanged}
           fullWidth
@@ -144,9 +146,13 @@ const CommunityIntro = ({ stepper, community, members }) => {
           sx={{ marginTop: '16px', marginBottom: '16px' }}
           justifyContent="end"
         >
-          <Button variant="outlined" disabled={!introChanged} type="sumbit">
-            Update
-          </Button>
+          {community.is_admin ? (
+            <Button variant="outlined" disabled={!introChanged} type="sumbit">
+              Update
+            </Button>
+          ) : (
+            ''
+          )}
         </Stack>
       </Stack>
       <Stack direction="row" spacing={2} justifyContent="end">
