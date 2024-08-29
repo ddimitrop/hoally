@@ -1,4 +1,3 @@
-import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -19,8 +18,9 @@ import { Info } from './Utils.js';
 import ConfirmDialog from './ConfirmDialog.js';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
 import { flagState } from './state-utils.js';
+import { MemberRoles } from './CommunityList';
 
-const CommunityMembers = ({ stepper, members }) => {
+const CommunityMembers = ({ stepper, community, members }) => {
   let [memberEdit, setMemberEdit] = useState(null);
   let [memberAdd, setMemberAdd] = useState(false);
   let [memberChanged, setMemberChanged] = useState(false);
@@ -125,22 +125,26 @@ const CommunityMembers = ({ stepper, members }) => {
                 <ListItem
                   key={member.id}
                   secondaryAction={
-                    <Box>
-                      <IconButton
-                        edge="end"
-                        onClick={() => editMember(i)}
-                        aria-label="edit"
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        edge="end"
-                        onClick={() => confirmDelete(i)}
-                        aria-label="delete"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
+                    community.is_admin ? (
+                      <Box>
+                        <IconButton
+                          edge="end"
+                          onClick={() => editMember(i)}
+                          aria-label="edit"
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
+                          edge="end"
+                          onClick={() => confirmDelete(i)}
+                          aria-label="delete"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                    ) : (
+                      ''
+                    )
                   }
                 >
                   <ListItemAvatar>
@@ -164,33 +168,7 @@ const CommunityMembers = ({ stepper, members }) => {
                             paddingRight: ['0', '0', '16px', '16px', '16px'],
                           }}
                         >
-                          {member.is_board_member ? (
-                            <Info
-                              sx={{ marginLeft: '12px' }}
-                              title="The user is a board member of this community"
-                              icon="people_alt"
-                            />
-                          ) : (
-                            ''
-                          )}
-                          {member.is_moderator ? (
-                            <Info
-                              sx={{ marginLeft: '12px' }}
-                              title="The user is a moderator of this community"
-                              icon="local_police"
-                            />
-                          ) : (
-                            ''
-                          )}
-                          {member.is_admin ? (
-                            <Info
-                              sx={{ marginLeft: '12px' }}
-                              title="The user is an administrator of this community"
-                              icon="manage_accounts"
-                            />
-                          ) : (
-                            ''
-                          )}
+                          <MemberRoles member={member} />
                         </Box>
                       </Box>
                     }
@@ -223,10 +201,12 @@ const CommunityMembers = ({ stepper, members }) => {
                 addresses={addresses()}
                 setChanged={setMemberChanged}
               />
-            ) : (
+            ) : community.is_admin ? (
               <Button variant="outlined" onClick={addMember}>
                 Add members
               </Button>
+            ) : (
+              ''
             )}
           </Box>
         </Stack>

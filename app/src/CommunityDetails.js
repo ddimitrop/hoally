@@ -110,6 +110,9 @@ const CommunityDetails = ({ stepper, community, moveNext }) => {
                 fullWidth
                 autoComplete="no-auto-complete"
                 variant="standard"
+                InputProps={{
+                  readOnly: !community.is_admin,
+                }}
               />
               <Info title="The official name of the community" />
             </Grid>
@@ -126,6 +129,7 @@ const CommunityDetails = ({ stepper, community, moveNext }) => {
                     variant: 'standard',
                     autoComplete: 'new-password',
                   }}
+                  readOnly={!community.is_admin}
                   initValue={community.address || ''}
                   onSelect={(city, state, zip) => {
                     setCityValue(city);
@@ -149,6 +153,9 @@ const CommunityDetails = ({ stepper, community, moveNext }) => {
                 value={cityValue}
                 fullWidth
                 variant="standard"
+                InputProps={{
+                  readOnly: !community.is_admin,
+                }}
                 onChange={(e) => setCityValue(e.target.value)}
               />
             </Grid>
@@ -166,6 +173,9 @@ const CommunityDetails = ({ stepper, community, moveNext }) => {
                 fullWidth
                 autoComplete="address-level1"
                 variant="standard"
+                InputProps={{
+                  readOnly: !community.is_admin,
+                }}
                 onChange={(e) => setStateValue(e.target.value)}
               />
             </Grid>
@@ -184,6 +194,9 @@ const CommunityDetails = ({ stepper, community, moveNext }) => {
                 onBlur={(event) => zip.validate(event.currentTarget)}
                 fullWidth
                 variant="standard"
+                InputProps={{
+                  readOnly: !community.is_admin,
+                }}
                 onChange={(e) => setZipValue(e.target.value)}
               />
             </Grid>
@@ -197,6 +210,9 @@ const CommunityDetails = ({ stepper, community, moveNext }) => {
                 defaultValue={community.admin_address || ''}
                 fullWidth
                 variant="standard"
+                InputProps={{
+                  readOnly: !community.is_admin,
+                }}
                 autoComplete="street-address"
               />
               <Info
@@ -212,7 +228,7 @@ const CommunityDetails = ({ stepper, community, moveNext }) => {
           justifyContent="end"
           alignItems="center"
         >
-          {community.id ? (
+          {community.id && community.is_admin ? (
             <Button color="error" onClick={showDeleteCommunity}>
               Delete community
             </Button>

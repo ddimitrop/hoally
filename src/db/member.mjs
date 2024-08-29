@@ -46,6 +46,7 @@ export class Member {
     isAdmin,
     isBoardMember,
     isModerator,
+    isObserver,
   ) {
     const { sql, crypto } = this.connection;
     const id = this.getData().id;
@@ -56,6 +57,7 @@ export class Member {
         is_admin = ${isAdmin},
         is_board_member = ${isBoardMember},
         is_moderator = ${isModerator},
+        is_observer = ${isObserver},
         encrypted_invitation_full_name = ${crypto.encrypt(invitationFullName)},
         encrypted_invitation_email = ${crypto.encrypt(invitationEmail)},
         last_update_timestamp = LOCALTIMESTAMP
@@ -109,6 +111,7 @@ export class Member {
     isAdmin,
     isBoardMember,
     isModerator,
+    isObserver,
     hoaUserId,
   ) {
     const { sql, crypto } = connection;
@@ -120,6 +123,7 @@ export class Member {
         is_admin,
         is_board_member,
         is_moderator,
+        is_observer,
         encrypted_invitation_full_name,
         encrypted_invitation_email
       ) values (
@@ -131,6 +135,7 @@ export class Member {
         ${isAdmin},
         ${isBoardMember},
         ${isModerator},
+        ${isObserver},
         ${crypto.encrypt(invitationFullName)},
         ${crypto.encrypt(invitationEmail)}
       )
@@ -152,6 +157,7 @@ export class Member {
         m.is_admin,
         m.is_board_member,
         m.is_moderator,
+        m.is_observer,
         m.hoauser_id,
         h.encrypted_name
         from member m 
@@ -177,6 +183,7 @@ export class Member {
         m.is_admin,
         m.is_board_member,
         m.is_moderator,
+        m.is_observer,
         m.hoauser_id,
         h.encrypted_name
         from member m 
@@ -202,6 +209,7 @@ export class Member {
         bool_or(m.is_admin) as is_admin,
         bool_or(m.is_board_member) as is_board_member,
         bool_or(m.is_moderator) as is_moderator,
+        bool_and(m.is_observer) as is_observer,
         count(1) as num_properties
         from member m 
         where m.community_id = ${communityId}
@@ -276,6 +284,7 @@ export function memberApi(connection, app) {
         is_admin: isAdmin,
         is_board_member: isBoardMember,
         is_moderator: isModerator,
+        is_observer: isObserver,
       } = req.body;
       const memberInst = await Member.create(
         connection,
@@ -286,6 +295,7 @@ export function memberApi(connection, app) {
         isAdmin,
         isBoardMember,
         isModerator,
+        isObserver,
         hoaUserId,
       );
       const member = memberInst.getData();
@@ -306,6 +316,7 @@ export function memberApi(connection, app) {
         is_admin: isAdmin,
         is_board_member: isBoardMember,
         is_moderator: isModerator,
+        is_observer: isObserver,
       } = req.body;
       const memberInst = await Member.get(connection, hoaUserId, id);
 
@@ -316,6 +327,7 @@ export function memberApi(connection, app) {
         isAdmin,
         isBoardMember,
         isModerator,
+        isObserver,
       );
       const member = memberInst.getData();
       res.json({ member });

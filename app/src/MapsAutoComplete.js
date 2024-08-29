@@ -46,6 +46,7 @@ export default function MapsAutoComplete({
   textFieldProps,
   onSelect,
   initValue,
+  readOnly,
 }) {
   const [value, setValue] = useState({
     description: initValue,
@@ -152,6 +153,7 @@ export default function MapsAutoComplete({
       includeInputInList
       filterSelectedOptions
       value={value}
+      readOnly={readOnly}
       noOptionsText="No locations"
       onChange={(event, newValue) => {
         setOptions(newValue ? [newValue, ...options] : options);

@@ -83,6 +83,7 @@ CREATE TABLE member (
     is_admin BOOLEAN NOT NULL DEFAULT false,
     is_board_member BOOLEAN NOT NULL DEFAULT false,
     is_moderator BOOLEAN NOT NULL DEFAULT false,
+    is_observer BOOLEAN NOT NULL DEFAULT false,
     creation_timestamp TIMESTAMP DEFAULT LOCALTIMESTAMP,
     last_update_timestamp TIMESTAMP,
     registration_timestamp TIMESTAMP

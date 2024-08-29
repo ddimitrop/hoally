@@ -67,7 +67,11 @@ const CreateCommunity = () => {
               community={community}
               moveNext={moveNext}
             />
-            <CommunityMembers stepper={stepper} members={members} />
+            <CommunityMembers
+              stepper={stepper}
+              community={community}
+              members={members}
+            />
             <CommunityIntro
               stepper={stepper}
               community={community}
