@@ -104,7 +104,7 @@ const CommunityList = () => {
               selected={selectedIndex === i}
               onClick={() => goToCommunity(i)}
             >
-              <ListItemIcon>
+              <ListItemIcon sx={{ display: { xs: 'none', sm: 'block' } }}>
                 <HolidayVillageTwoToneIcon fontSize="large" />
               </ListItemIcon>
               <ListItemText
@@ -122,7 +122,13 @@ const CommunityList = () => {
                     </Box>
                   </Box>
                 }
-                secondary={`${community.address}, ${community.city}`}
+                secondary={
+                  <Typography>
+                    {`${community.address}, ${community.city}`} <br />
+                    {`(${community.num_members}) properties, 
+                            (${community.num_registered_members}) registered`}
+                  </Typography>
+                }
               />
             </ListItemButton>
           </ListItem>

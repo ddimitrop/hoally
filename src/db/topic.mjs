@@ -38,12 +38,13 @@ export class Topic {
     const { sql } = this.connection;
     const id = this.getData().id;
     const hoaUserId = this.hoaUserId;
-    const [topic] = await sql`
+    await sql`
       update topic 
       set type = ${type},
       subject = ${subject},
       description = ${description},
-      tags = ${tags}
+      tags = ${tags},
+      last_update_timestamp = LOCALTIMESTAMP
       where
           id = ${id} and
           member_id in (
@@ -57,9 +58,8 @@ export class Topic {
 
     await sql`delete from vote_item where topic_id = ${id}`;
 
-    topic.propositions = [];
     for (const { description } of propositions) {
-      const [proposition] = await sql`
+      await sql`
           insert into vote_item (
             topic_id,
             description
@@ -70,10 +70,9 @@ export class Topic {
     
           returning *
           `;
-
-      topic.propositions.push(proposition);
     }
-    this.data = topic;
+    const updatedInst = await Topic.get(this.connection, hoaUserId, id);
+    this.data = updatedInst.data;
   }
 
   async archive() {
@@ -83,7 +82,8 @@ export class Topic {
 
     await sql`
       update topic 
-      set is_open = false
+      set is_open = false,
+          archive_timestamp = LOCALTIMESTAMP
       where id = ${id} and (
         member_id in (
             select member_id from member 
@@ -104,6 +104,7 @@ export class Topic {
     const [{ numvotes }] = await sql`
       select count(1) as numvotes from member
       where community_id = ${communityId}
+      and is_observer = false
       and hoauser_id = ${hoaUserId}
     `;
 
@@ -112,6 +113,7 @@ export class Topic {
       and member_id in (
         select id from member
         where community_id = ${communityId}
+        and is_observer = false
         and hoauser_id = ${hoaUserId})`;
 
     if (isYes == null) return numvotes;
@@ -119,8 +121,9 @@ export class Topic {
     await sql`
       insert into vote (vote_item_id, member_id, is_yes)
         select ${voteItemId}, id, ${isYes} from member
-        where community_id = ${communityId} and
-              hoauser_id = ${hoaUserId}`;
+        where community_id = ${communityId}
+              and is_observer = false
+              and hoauser_id = ${hoaUserId}`;
 
     return numvotes;
   }
@@ -201,7 +204,7 @@ export class Topic {
   ) {
     const { sql } = connection;
 
-    const [topic] = await sql`
+    const [{ id: topicId }] = await sql`
           insert into topic (
             community_id,
             member_id,
@@ -223,10 +226,9 @@ export class Topic {
     
           returning *
           `;
-    const { id: topicId } = topic;
-    topic.propositions = [];
+
     for (const { description } of propositions) {
-      const [proposition] = await sql`
+      await sql`
         insert into vote_item (
           topic_id,
           description
@@ -237,26 +239,28 @@ export class Topic {
   
         returning *
         `;
-
-      proposition.comments = [];
-      proposition.votes_up = 0;
-      proposition.votes_down = 0;
-      topic.propositions.push(proposition);
     }
-    return new Topic(connection, topic, hoaUserId);
+    return topicId;
   }
 
   static async getList(connection, communityId, hoaUserId, isOpen = true) {
-    const { sql } = connection;
+    const { sql, crypto } = connection;
     const topics = await sql`
-      select * from topic 
-        where community_id = (
+      select t.*, m.address, h.encrypted_name as name
+      from topic t 
+        join member m on m.id = t.member_id
+        left join hoauser h on m.hoauser_id = h.id
+        where t.community_id = (
           select max(community_id) from member 
           where community_id = ${communityId} 
             and hoauser_id = ${hoaUserId})
-        and is_open = ${isOpen}`;
+        and is_open = ${isOpen}
+        order by id asc`;
 
-    topics.forEach((topic) => (topic.propositions = []));
+    topics.forEach((topic) => {
+      topic.propositions = [];
+      topic.name = crypto.decrypt(topic.name);
+    });
     const topicsById = topics.reduce((map, topic) => {
       map[topic.id] = topic;
       return map;
@@ -332,15 +336,19 @@ export class Topic {
   }
 
   static async get(connection, hoaUserId, id) {
-    const { sql } = connection;
+    const { sql, crypto } = connection;
     const [topic] = await sql`
-      select * from topic 
-        where id = ${id} and community_id in (
+    select t.*, m.address, h.encrypted_name as name
+      from topic t 
+        join member m on m.id = t.member_id
+        left join hoauser h on m.hoauser_id = h.id
+        where t.id = ${id} and t.community_id in (
           select community_id from member 
           where hoauser_id = ${hoaUserId})`;
 
     const communityId = topic.community_id;
     topic.propositions = [];
+    topic.name = crypto.decrypt(topic.name);
 
     const propositions = await sql`
         select * from vote_item v 
@@ -415,7 +423,7 @@ export function topicApi(connection, app) {
         propositions,
         tags,
       } = req.body;
-      const topicInst = await Topic.create(
+      const topicId = await Topic.create(
         connection,
         communityId,
         memberId,
@@ -426,6 +434,7 @@ export function topicApi(connection, app) {
         tags,
         hoaUserId,
       );
+      const topicInst = await Topic.get(connection, hoaUserId, topicId);
       const topic = topicInst.getData();
       res.json({ topic });
     }),
@@ -459,7 +468,7 @@ export function topicApi(connection, app) {
       } = req.body;
       const topicInst = await Topic.get(connection, hoaUserId, id);
 
-      await topicInst.update(
+      topicInst.update(
         memberId,
         communityId,
         type,

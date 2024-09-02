@@ -144,6 +144,13 @@ body {
   overflow-x: hidden;
 }
 
+@media only screen and (max-width: 600px) {
+  .main-content {
+    margin: 4px;
+    width: calc(100% - 8px);
+  }
+}
+
 .main-content > * {
   flex-grow: 1;
   width: calc(100% - 48px);

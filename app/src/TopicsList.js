@@ -1,20 +1,21 @@
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
-import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
 import Fab from '@mui/material/Fab';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import PostAddIcon from '@mui/icons-material/PostAdd';
 import AnnouncementIcon from '@mui/icons-material/Announcement';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
 import ThumbDownOffAltIcon from '@mui/icons-material/ThumbDownOffAlt';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import FavoriteIcon from '@mui/icons-material/Favorite';
-import ArchiveOutlinedIcon from '@mui/icons-material/ArchiveOutlined';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
 import HolidayVillageOutlinedIcon from '@mui/icons-material/HolidayVillageOutlined';
 import BallotIcon from '@mui/icons-material/Ballot';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -22,7 +23,7 @@ import ListItemText from '@mui/material/ListItemText';
 import { Global } from './Global.js';
 import { useLoaderData } from 'react-router-dom';
 import { useState, useContext, Fragment, dangerouslySetInnerHTML } from 'react';
-import { getData, postData } from './json-utils.js';
+import { getData, postData, longAgo } from './json-utils.js';
 import AddTopic from './AddTopic.js';
 import { red } from '@mui/material/colors';
 import { green } from '@mui/material/colors';
@@ -50,6 +51,8 @@ const TopicsList = () => {
   const cancelDialog = flagState(useState(false));
   let [voteCount, setVoteCount] = useState(0);
   const [commentCancel, setCommentCancel] = useState(null);
+  const [expanded, setExpanded] = useState([]);
+  const [needsExpand, setNeedsExpand] = useState([]);
 
   const isHiddenIntro = () => {
     return Date.now() < Number(localStorage.getItem('hiddenIntro'));
@@ -199,9 +202,6 @@ const TopicsList = () => {
     });
   };
 
-  const hasVotes = (topic) =>
-    topic.propositions.some((p) => p.votes_up !== 0 || p.votes_down !== 0);
-
   const getIntro = () => {
     if (!community.intro) return '';
     const intro = community.intro.replace('<community_name>', community.name);
@@ -214,25 +214,54 @@ const TopicsList = () => {
     setHiddenIntro(true);
   };
 
+  const toggleExpand = (i) => {
+    expanded[i] = !expanded[i];
+    setExpanded([...expanded]);
+  };
+
+  const cannotEdit = (topic) => {
+    if (topic.member_id !== member.id) return true;
+    return topic.propositions.some(
+      (p) => p.votes_up !== 0 || p.votes_down !== 0 || p.comments.length !== 0,
+    );
+  };
+
+  const canArchive = (topic) => {
+    if (topic.member_id === member.id) return true;
+    if (member.is_board_member) {
+      return (
+        // Board members can archive all posts that are 7 days old.
+        Date.now() - new Date(topic.creation_timestamp) >
+        1000 * 60 * 60 * 24 * 7
+      );
+    }
+    return false;
+  };
+
   return (
     <Stack>
-      <Stack direction="row" justifyContent="space-between">
-        <Box sx={{ flexGrow: 1, maxWidth: 'md', paddingRight: '8px' }}>
-          {!hiddenIntro ? (
-            <Alert
-              icon={<HolidayVillageOutlinedIcon fontSize="inherit" />}
-              severity="success"
-              onClose={hideIntro}
-            >
-              <div
-                className="markdown"
-                dangerouslySetInnerHTML={{ __html: getIntro() }}
-              ></div>
-            </Alert>
-          ) : (
-            ''
-          )}
-        </Box>
+      {!hiddenIntro ? (
+        <Alert
+          sx={{ marginBottom: '16px', maxHeight: '200px' }}
+          icon={<HolidayVillageOutlinedIcon fontSize="inherit" />}
+          severity="success"
+          onClose={hideIntro}
+        >
+          <div
+            className="markdown"
+            dangerouslySetInnerHTML={{ __html: getIntro() }}
+          ></div>
+        </Alert>
+      ) : (
+        ''
+      )}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
         {false ? (
           <TextField
             id="outlined-basic"
@@ -242,15 +271,13 @@ const TopicsList = () => {
             sx={{ flexGrow: 1, maxWidth: 'md', paddingRight: '8px' }}
           />
         ) : (
-          ''
+          <div />
         )}
-        <Box sx={{ display: 'flex', justifyContent: 'end' }}>
-          <Fab color="primary" variant="extended" onClick={postTopic}>
-            <PostAddIcon sx={{ mr: 1 }} />
-            <Box sx={{ whiteSpace: 'nowrap' }}>New post</Box>
-          </Fab>
-        </Box>
-      </Stack>
+        <Fab color="primary" variant="extended" onClick={postTopic}>
+          <PostAddIcon sx={{ mr: 1 }} />
+          <Box sx={{ whiteSpace: 'nowrap' }}>New post</Box>
+        </Fab>
+      </Box>
       {topicAdd ? (
         <Fragment>
           <Stack direction="row" justifyContent="start">
@@ -279,53 +306,106 @@ const TopicsList = () => {
       ) : (
         ''
       )}
-      <List dense disablePadding sx={{ flexGrow: '1' }}>
+      <List
+        dense
+        disablePadding
+        sx={{
+          flexGrow: '1',
+          borderTop: 'solid 1px rgba(0,0,0, 0.12)',
+          marginTop: '16px',
+        }}
+      >
         {[...topicsList].reverse().map((topic, i) =>
           topicEdit === i ? (
-            <ListItem key={member.id}>
+            <ListItem key={member.id} divider sx={{ paddingBottom: '16px' }}>
               <AddTopic
                 done={editDone}
                 topic={topic}
                 member={member}
                 setChanged={setTopicChanged}
+                confirmDelete={() => confirmDelete(i)}
               />
             </ListItem>
           ) : (
             <ListItem
               key={topic.id}
               divider
+              sx={{ overflow: 'hidden' }}
               secondaryAction={
-                hasVotes(topic) ? (
-                  <IconButton
-                    edge="end"
-                    aria-label="archive"
-                    onClick={() => confirmArchive(i)}
-                  >
-                    <ArchiveOutlinedIcon />
-                  </IconButton>
-                ) : (
-                  <Fragment>
-                    <IconButton
-                      edge="end"
-                      aria-label="delete"
-                      onClick={() => confirmDelete(i)}
+                <Stack
+                  direction="column"
+                  sx={{ height: '80px' }}
+                  justifyContent="space-between"
+                >
+                  {cannotEdit(topic) ? (
+                    <Tooltip
+                      title="Archiving this topic will freeze it and 
+                             move it to the historical views. 
+                             Board members can also archive your older (7 days) posts ."
                     >
-                      <DeleteOutlineIcon />
-                    </IconButton>
-                    <IconButton
-                      edge="end"
-                      aria-label="edit"
-                      onClick={() => editTopic(i)}
+                      <IconButton
+                        sx={{
+                          visibility: canArchive(topic) ? 'visible' : 'hidden',
+                        }}
+                        edge="end"
+                        aria-label="archive"
+                        onClick={() => confirmArchive(i)}
+                      >
+                        <DoneAllIcon />
+                      </IconButton>
+                    </Tooltip>
+                  ) : (
+                    <Tooltip
+                      title="Editing this topic is only allowed very early, 
+                                    before others have voted or commented on it."
                     >
-                      <EditOutlinedIcon />
+                      <IconButton
+                        sx={{
+                          visibility:
+                            member.id === topic.member_id
+                              ? 'visible'
+                              : 'hidden',
+                        }}
+                        edge="end"
+                        aria-label="edit"
+                        onClick={() => editTopic(i)}
+                      >
+                        <EditOutlinedIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                  <Tooltip title={expanded[i] ? 'Collapse' : 'Expand'}>
+                    <IconButton
+                      sx={{ visibility: needsExpand[i] ? 'visible' : 'hidden' }}
+                      edge="end"
+                      aria-label="expand"
+                      onClick={() => toggleExpand(i)}
+                    >
+                      {expanded[i] ? (
+                        <KeyboardArrowUpIcon size="small" />
+                      ) : (
+                        <KeyboardArrowDownIcon size="small" />
+                      )}
                     </IconButton>
-                  </Fragment>
-                )
+                  </Tooltip>
+                </Stack>
               }
             >
-              <Stack sx={{ width: '100%' }}>
-                <Stack direction="row" alignItems="center">
-                  <ListItemIcon>
+              <Stack
+                sx={{
+                  width: '100%',
+                  maxHeight: expanded[i] ? 'auto' : '110px',
+                  minHeight: '80px',
+                  overflowY: 'scroll',
+                }}
+                ref={(node) => {
+                  if (!node) return;
+                  needsExpand[i] = node.offsetHeight >= 110;
+                  setNeedsExpand(needsExpand);
+                }}
+              >
+                <Stack direction="row" alignItems="start">
+                  <ListItemIcon sx={{ display: { xs: 'none', sm: 'block' } }}>
                     {topic.type === 'proposition' ? (
                       <BallotIcon fontSize="large" />
                     ) : (
@@ -334,126 +414,169 @@ const TopicsList = () => {
                   </ListItemIcon>
                   <ListItemText
                     disableTypography
-                    sx={{
-                      marginRight: '24px',
-                    }}
-                    primary={topic.subject}
-                    secondary={
-                      <Grid container>
-                        <Grid
-                          item
-                          sx={{ fontSize: '14px' }}
-                          xs={topic.type === 'announcement' ? 9 : 12}
+                    primary={
+                      <Fragment>
+                        {topic.subject}
+                        <span
+                          style={{
+                            fontSize: '14px',
+                            paddingLeft: '16px',
+                          }}
                         >
+                          (
+                          <Tooltip title={topic.address}>
+                            <span>{topic.name || 'Ex member'}</span>
+                          </Tooltip>
+                          &nbsp; - {longAgo(topic.creation_timestamp)})
+                        </span>
+                      </Fragment>
+                    }
+                    secondary={
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <Box sx={{ fontSize: '14px', flexGrow: '1' }}>
                           {topic.description}
-                          <br></br>
+                          {topic.description && topic.tags.length ? <br /> : ''}
                           {topicTags(topic)}
                           {topic.type === 'announcement' ? (
-                            <CommentsList
-                              checkChange={checkChange}
-                              setChanged={setTopicChanged}
-                              setCommentCancel={setCommentCancel}
-                              comments={topic.propositions[0].comments}
-                              topicId={topic.id}
-                              propositionId={topic.propositions[0].id}
-                            />
+                            <Fragment>
+                              {topic.description ? '' : 'Comment: '}
+                              <CommentsList
+                                checkChange={checkChange}
+                                setChanged={setTopicChanged}
+                                setCommentCancel={setCommentCancel}
+                                comments={topic.propositions[0].comments}
+                                topicId={topic.id}
+                                propositionId={topic.propositions[0].id}
+                              />
+                            </Fragment>
                           ) : (
                             ''
                           )}
-                        </Grid>
+                        </Box>
                         {topic.type === 'announcement' ? (
-                          <Grid item xs={3} sx={{ whiteSpace: 'nowrap' }}>
-                            <IconButton
-                              size="small"
-                              onClick={() => loveTopic(topic)}
-                              aria-label="love"
+                          <Box sx={{ whiteSpace: 'nowrap' }}>
+                            <Tooltip
+                              title={
+                                topic.propositions[0].vote
+                                  ? 'Withdraw your feedback.'
+                                  : 'Like this announcement. Your feedback is anonymous.'
+                              }
                             >
-                              <FavoriteIcon
-                                sx={{
-                                  color: topic.propositions[0].vote
-                                    ? likeColor
-                                    : noVoteColor,
-                                }}
-                                fontSize="small"
-                              />
-                            </IconButton>
+                              <IconButton
+                                size="small"
+                                disabled={community.is_observer}
+                                onClick={() => loveTopic(topic)}
+                                aria-label="love"
+                              >
+                                <FavoriteIcon
+                                  sx={{
+                                    color: topic.propositions[0].vote
+                                      ? likeColor
+                                      : noVoteColor,
+                                  }}
+                                  fontSize="small"
+                                />
+                              </IconButton>
+                            </Tooltip>
                             <span style={{ fontSize: '14px' }}>
                               ({topic.propositions[0].votes_up})
                             </span>
-                          </Grid>
+                          </Box>
                         ) : (
                           ''
                         )}
-                      </Grid>
+                      </Box>
                     }
                   />
                 </Stack>
                 <Box
                   sx={{
-                    marginRight: '24px',
-                    marginLeft: '54px',
+                    marginLeft: { xs: '0', sm: '54px' },
                   }}
                 >
                   {topic.type === 'proposition'
                     ? topic.propositions.map((proposition, j) => (
-                        <Box key={proposition.id}>
-                          <Grid container>
-                            <Grid item xs={9}>
-                              <b>Proposition:</b> {proposition.description}
-                              <CommentsList
-                                checkChange={checkChange}
-                                setChanged={setTopicChanged}
-                                setCommentCancel={setCommentCancel}
-                                comments={proposition.comments}
-                                topicId={topic.id}
-                                propositionId={proposition.id}
-                              />
-                            </Grid>
-                            <Grid item xs={3}>
-                              <span style={{ whiteSpace: 'nowrap' }}>
-                                <IconButton
-                                  size="small"
-                                  onClick={() => vote(topic, proposition, true)}
-                                  aria-label="vote up"
-                                >
-                                  <ThumbUpOffAltIcon
-                                    sx={{
-                                      color:
-                                        proposition.vote === true
-                                          ? voteUpColor
-                                          : noVoteColor,
-                                    }}
-                                    fontSize="small"
-                                  />
-                                </IconButton>
-                                <span style={{ fontSize: '14px' }}>
-                                  ({proposition.votes_up})
-                                </span>
-                              </span>
-                              <span style={{ whiteSpace: 'nowrap' }}>
-                                <IconButton
-                                  size="small"
-                                  onClick={() =>
-                                    vote(topic, proposition, false)
-                                  }
-                                  aria-label="vote down"
-                                >
-                                  <ThumbDownOffAltIcon
-                                    sx={{
-                                      color:
-                                        proposition.vote === false
-                                          ? voteDownColor
-                                          : noVoteColor,
-                                    }}
-                                    fontSize="small"
-                                  />
-                                </IconButton>
-                                <span style={{ fontSize: '14px' }}>
-                                  ({proposition.votes_down})
-                                </span>
-                              </span>
-                            </Grid>
-                          </Grid>
+                        <Box
+                          key={proposition.id}
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <Box sx={{ flexGrow: '1' }}>
+                            <b>Proposition:</b> {proposition.description}
+                            <CommentsList
+                              checkChange={checkChange}
+                              setChanged={setTopicChanged}
+                              setCommentCancel={setCommentCancel}
+                              comments={proposition.comments}
+                              topicId={topic.id}
+                              propositionId={proposition.id}
+                            />
+                          </Box>
+                          <Box sx={{ whiteSpace: 'nowrap' }}>
+                            <Tooltip
+                              title={
+                                proposition.vote === true
+                                  ? 'Withdraw your vote.'
+                                  : 'Vote to support this proposition. Your vote is anonymous.'
+                              }
+                            >
+                              <IconButton
+                                size="small"
+                                disabled={community.is_observer}
+                                onClick={() => {
+                                  vote(topic, proposition, true);
+                                }}
+                                aria-label="vote up"
+                              >
+                                <ThumbUpOffAltIcon
+                                  sx={{
+                                    color:
+                                      proposition.vote === true
+                                        ? voteUpColor
+                                        : noVoteColor,
+                                  }}
+                                  fontSize="small"
+                                />
+                              </IconButton>
+                            </Tooltip>
+                            <span style={{ fontSize: '14px' }}>
+                              ({proposition.votes_up})
+                            </span>
+                            <Tooltip
+                              title={
+                                proposition.vote === false
+                                  ? 'Withdraw your vote.'
+                                  : 'Vote against this proposition. Your vote is anonymous.'
+                              }
+                            >
+                              <IconButton
+                                size="small"
+                                disabled={community.is_observer}
+                                onClick={() => vote(topic, proposition, false)}
+                                aria-label="vote down"
+                              >
+                                <ThumbDownOffAltIcon
+                                  sx={{
+                                    color:
+                                      proposition.vote === false
+                                        ? voteDownColor
+                                        : noVoteColor,
+                                  }}
+                                  fontSize="small"
+                                />
+                              </IconButton>
+                            </Tooltip>
+                            <span style={{ fontSize: '14px' }}>
+                              ({proposition.votes_down})
+                            </span>
+                          </Box>
                         </Box>
                       ))
                     : ''}

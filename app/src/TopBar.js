@@ -10,10 +10,10 @@ import { useState, Fragment, useContext } from 'react';
 import { Global } from './Global';
 import { flagState } from './state-utils.js';
 
-import './TopBar.css';
 import './SignupDialog.js';
 import SingupDialog from './SignupDialog';
 import SinginDialog from './SigninDialog';
+import AppLogo from './AppLogo';
 import AppDrawer from './AppDrawer';
 import ValidationWarning from './ValidationWarning';
 
@@ -40,9 +40,11 @@ const TopBar = () => {
           </IconButton>
           <Box
             component="div"
-            sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}
+            sx={{ flexGrow: 1, display: 'flex', alignItems: 'start' }}
           >
-            <img className="AppLogo" alt="Logo" src="/logo192.png"></img>
+            <AppLogo
+              sx={{ width: '36px', height: '36px', marginRight: '16px' }}
+            />
             <Typography variant="logo">HOAlly</Typography>
           </Box>
           {global.hoaUser.name ? null : (

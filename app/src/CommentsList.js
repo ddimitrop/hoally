@@ -49,6 +49,7 @@ const CommentsList = ({
 
   const confirmDelete = (i) => {
     checkChange(() => {
+      setChanged(true);
       // We show the list in reverse.
       setDeleteIndex(comments.length - 1 - i);
       deleteDialog.open();
@@ -57,7 +58,12 @@ const CommentsList = ({
 
   const deleteComment = () => {
     comments.splice(deleteIndex, 1);
+    cancelDelete();
+  };
+
+  const cancelDelete = () => {
     setDeleteIndex(null);
+    setChanged(false);
   };
 
   const editComment = (i) => {
@@ -157,9 +163,8 @@ const CommentsList = ({
         </List>
         <DeleteConfirmDialog
           control={deleteDialog}
-          onDelete={() => {
-            deleteComment();
-          }}
+          onDelete={deleteComment}
+          onClose={cancelDelete}
           deleteApiPath={`/api/comment/${topicId}/${comments[deleteIndex]?.id}`}
           deleteTitle="Delete comment ?"
           deleteText="Deleting the comment can't be undone."

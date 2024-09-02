@@ -14,7 +14,7 @@ import { useParams } from 'react-router-dom';
 import { postData } from './json-utils.js';
 import ClearIcon from '@mui/icons-material/Clear';
 
-const AddTopic = ({ topic, member, done, setChanged }) => {
+const AddTopic = ({ topic, confirmDelete, member, done, setChanged }) => {
   const global = useContext(Global);
   const addTopicForm = useRef(null);
   const subject = useRef(null);
@@ -119,7 +119,7 @@ const AddTopic = ({ topic, member, done, setChanged }) => {
       ref={addTopicForm}
       component="form"
       container
-      sx={{ flexGrow: '1', maxWidth: 'md' }}
+      sx={{ flexGrow: '1' }}
       onSubmit={(event) => {
         event.preventDefault();
         saveTopic();
@@ -230,7 +230,7 @@ const AddTopic = ({ topic, member, done, setChanged }) => {
             </Fragment>
           ))
         : ''}
-      <Grid item md={9} xs={6}>
+      <Grid item md={8} xs={4}>
         <ChipSelect
           options={TOPIC_TAGS}
           id="topic-tags"
@@ -241,15 +241,28 @@ const AddTopic = ({ topic, member, done, setChanged }) => {
       </Grid>
       <Grid
         item
-        md={3}
-        xs={6}
+        md={4}
+        xs={8}
         sx={{
           display: 'flex',
           justifyContent: 'end',
           alignItems: 'end',
-          gap: '12px',
+          gap: { xs: '2px', sm: '12px' },
         }}
       >
+        {confirmDelete ? (
+          <Button
+            size="small"
+            color="error"
+            onClick={() => {
+              confirmDelete();
+            }}
+          >
+            Delete
+          </Button>
+        ) : (
+          ''
+        )}
         <Button
           size="small"
           onClick={() => {

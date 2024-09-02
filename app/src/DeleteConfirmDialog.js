@@ -7,6 +7,7 @@ import ConfirmDialog from './ConfirmDialog.js';
 const DeleteConfirmDialog = ({
   control,
   onDelete,
+  onClose,
   deleteApiPath,
   deleteMethod,
   deleteAction,
@@ -20,6 +21,9 @@ const DeleteConfirmDialog = ({
   function close() {
     setErrorMessage('');
     setDeleteSuccess(false);
+    if (onClose) {
+      onClose();
+    }
   }
 
   function closeDeleteSuccess() {
