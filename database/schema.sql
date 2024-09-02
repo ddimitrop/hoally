@@ -33,8 +33,8 @@ CREATE TABLE community (
     intro TEXT NOT NULL DEFAULT '',
     invitation_text TEXT NOT NULL DEFAULT '',
     icon_file VARCHAR(100),
-    creation_timestamp TIMESTAMP DEFAULT LOCALTIMESTAMP,
-    last_update_timestamp TIMESTAMP
+    creation_timestamp TIMESTAMP WITH TIME ZONE  DEFAULT LOCALTIMESTAMP,
+    last_update_timestamp TIMESTAMP WITH TIME ZONE
 );
 
 CREATE INDEX ON community(zipcode);
@@ -54,11 +54,11 @@ CREATE TABLE hoauser (
     hashed_password VARCHAR(200) NOT NULL,
     -- Temporary token (user forgot password).
     hashed_token VARCHAR(200) UNIQUE,
-    token_creation_timestamp TIMESTAMP,
+    token_creation_timestamp TIMESTAMP WITH TIME ZONE,
     encrypted_icon_file VARCHAR(100),
-    creation_timestamp TIMESTAMP DEFAULT LOCALTIMESTAMP,
-    last_update_timestamp TIMESTAMP,
-    email_validation_timestap TIMESTAMP,
+    creation_timestamp TIMESTAMP WITH TIME ZONE DEFAULT LOCALTIMESTAMP,
+    last_update_timestamp TIMESTAMP WITH TIME ZONE,
+    email_validation_timestap TIMESTAMP WITH TIME ZONE,
     last_access_date DATE,
     default_community INTEGER REFERENCES community(id) ON DELETE SET NULL
 );
@@ -74,7 +74,7 @@ CREATE TABLE member (
     hoauser_id INTEGER REFERENCES hoauser(id) ON DELETE SET NULL,
     -- Used when there is no assigned hoauser_id for members that have not registered yet.
     hashed_token VARCHAR(200) UNIQUE,
-    token_creation_timestamp TIMESTAMP,
+    token_creation_timestamp TIMESTAMP WITH TIME ZONE,
     community_id INTEGER NOT NULL REFERENCES community(id) ON DELETE CASCADE,
     address VARCHAR(200) NOT NULL,
     -- The following 2 matter only if hoauser_id is null
@@ -84,9 +84,9 @@ CREATE TABLE member (
     is_board_member BOOLEAN NOT NULL DEFAULT false,
     is_moderator BOOLEAN NOT NULL DEFAULT false,
     is_observer BOOLEAN NOT NULL DEFAULT false,
-    creation_timestamp TIMESTAMP DEFAULT LOCALTIMESTAMP,
-    last_update_timestamp TIMESTAMP,
-    registration_timestamp TIMESTAMP
+    creation_timestamp TIMESTAMP WITH TIME ZONE DEFAULT LOCALTIMESTAMP,
+    last_update_timestamp TIMESTAMP WITH TIME ZONE,
+    registration_timestamp TIMESTAMP WITH TIME ZONE
 );
 
 CREATE UNIQUE INDEX ON member(community_id, address);
@@ -112,7 +112,10 @@ CREATE TABLE topic (
     images varchar(100)[5],
     documents varchar(100)[5],
     -- When topics are resolved, they are getting archived.
-    is_open boolean NOT NULL DEFAULT true
+    is_open boolean NOT NULL DEFAULT true,
+    creation_timestamp TIMESTAMP WITH TIME ZONE DEFAULT LOCALTIMESTAMP,
+    last_update_timestamp TIMESTAMP WITH TIME ZONE,
+    archive_timestamp TIMESTAMP WITH TIME ZONE,
 );
 
 CREATE INDEX ON topic USING GIN (tags);

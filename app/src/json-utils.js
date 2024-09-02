@@ -48,3 +48,29 @@ export function getFormData(elemenet) {
   const formData = new FormData(elemenet);
   return Object.fromEntries(formData.entries());
 }
+
+export function longAgo(timestamp) {
+  const now = new Date();
+  const date = new Date(timestamp);
+  const diff = (now - date) / 1000;
+  const intervals = [
+    { num: 60, label: 'seconds' },
+    { num: 60, label: 'minutes' },
+    { num: 12, label: 'hours' },
+    { num: 30, label: 'days' },
+    { num: 12, label: 'months' },
+    { num: 100000, label: 'years' },
+  ];
+  let period = 1;
+  for (const interval of intervals) {
+    if (diff < period * interval.num) {
+      const diffAgo = Math.round(diff / period);
+      const label =
+        diffAgo > 1 ? interval.label : interval.label.replace(/s$/, '');
+      return `${diffAgo} ${label} ago`;
+    } else {
+      period *= interval.num;
+    }
+  }
+  return `Invalid date ${timestamp}`;
+}
