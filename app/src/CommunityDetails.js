@@ -56,7 +56,7 @@ const CommunityDetails = ({ stepper, community, moveNext }) => {
   const communityNext = () => {
     if (needsUpdate()) {
       saveCommunity().then((ok) => {
-        moveNext();
+        if (ok) moveNext();
       });
     } else {
       stepper.next();
@@ -68,7 +68,11 @@ const CommunityDetails = ({ stepper, community, moveNext }) => {
     const data = getFormData(createForm.current);
     data.id = community.id;
     return postData('/api/community', data, isNew ? 'POST' : 'PUT')
-      .then(({ community: savedCommunity }) => {
+      .then(({ community: savedCommunity, appError }) => {
+        if (appError) {
+          global.setAppError(appError);
+          return false;
+        }
         if (isNew) {
           navigate(`/community/${savedCommunity.id}`);
         } else {

@@ -153,6 +153,8 @@ CREATE TABLE comment (
     discussion text,
     images varchar(100)[5],
     documents varchar(100)[5],
+    creation_timestamp TIMESTAMP WITH TIME ZONE DEFAULT LOCALTIMESTAMP,
+    last_update_timestamp TIMESTAMP WITH TIME ZONE,
     CONSTRAINT single_parent CHECK (
         -- exactly one of them must be null and the other not null.
         (vote_item_id IS NULL AND comment_id IS NOT NULL) OR

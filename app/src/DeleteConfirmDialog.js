@@ -1,8 +1,9 @@
 import Alert from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
-import { useState, Fragment } from 'react';
+import { useContext, useState, Fragment } from 'react';
 import { postData } from './json-utils.js';
 import ConfirmDialog from './ConfirmDialog.js';
+import { Global } from './Global.js';
 
 const DeleteConfirmDialog = ({
   control,
@@ -15,6 +16,7 @@ const DeleteConfirmDialog = ({
   deleteText,
   deleteSuccessText,
 }) => {
+  const global = useContext(Global);
   let [errorMessage, setErrorMessage] = useState('');
   let [deleteSuccess, setDeleteSuccess] = useState(false);
 
@@ -36,7 +38,10 @@ const DeleteConfirmDialog = ({
 
   function deleteAccount() {
     postData(deleteApiPath, {}, deleteMethod || 'DELETE')
-      .then(({ ok }) => {
+      .then(({ ok, appError }) => {
+        if (appError) {
+          global.setAppError(appError);
+        }
         if (ok) {
           setDeleteSuccess(true);
           control.close();
