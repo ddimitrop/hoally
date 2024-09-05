@@ -14,6 +14,8 @@ const AddComment = ({
   topicId,
   propositionId,
   commentId,
+  confirmDelete,
+  member,
 }) => {
   const global = useContext(Global);
   const discussion = useRef(null);
@@ -41,6 +43,8 @@ const AddComment = ({
     return postData(`/api/comment/${topicId}`, comment, isNew ? 'POST' : 'PUT')
       .then(({ comment }) => {
         comment.comments = subComments;
+        comment.address = member.address;
+        comment.name = global.getCurrentUser().name;
         done(comment);
         clearEdits();
       })
@@ -75,10 +79,19 @@ const AddComment = ({
         onChange={checkWasChanged}
         autoFocus
       />
-      <Button variant="outlined" onClick={cancel}>
+      <Button
+        size="small"
+        color="error"
+        onClick={() => {
+          confirmDelete();
+        }}
+      >
+        Delete
+      </Button>
+      <Button size="small" variant="outlined" onClick={cancel}>
         Cancel
       </Button>
-      <Button variant="contained" type="submit">
+      <Button size="small" variant="contained" type="submit">
         Post
       </Button>
     </Stack>

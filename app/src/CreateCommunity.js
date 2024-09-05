@@ -4,6 +4,7 @@ import StepLabel from '@mui/material/StepLabel';
 import Stack from '@mui/material/Stack';
 import SlideContents from './SlideContents.js';
 import { useContext, useEffect, Fragment } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLoaderData } from 'react-router-dom';
 import CommunityDetails from './CommunityDetails.js';
 import CommunityMembers from './CommunityMembers.js';
@@ -16,6 +17,7 @@ let moveNextOnLoad = false;
 
 const CreateCommunity = () => {
   const global = useContext(Global);
+  const navigate = useNavigate();
   const stepper = useStepper(0);
 
   useEffect(() => {
@@ -32,19 +34,15 @@ const CreateCommunity = () => {
   const data = useLoaderData() || {};
   const community = data.community || {};
   const members = data.members || [];
-  if (data.error) {
-    global.setAppError(data.error);
-  }
 
-  const { error } = community;
-  if (error) {
-    global.setAppError(error);
-  }
-
-  const { error: membersError } = members;
-  if (membersError) {
-    global.setAppError(membersError);
-  }
+  useEffect(() => {
+    const errorMessage =
+      data.error || community.error || community.appError || members.error;
+    if (errorMessage) {
+      global.setAppError(errorMessage);
+      navigate('/community');
+    }
+  }, []);
 
   return (
     <Fragment>

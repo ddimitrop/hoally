@@ -2,13 +2,14 @@ import Stack from '@mui/material/Stack';
 import IconButton from '@mui/material/IconButton';
 import InsertCommentOutlinedIcon from '@mui/icons-material/InsertCommentOutlined';
 import ReplyRoundedIcon from '@mui/icons-material/ReplyRounded';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import Tooltip from '@mui/material/Tooltip';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import { useState, Fragment } from 'react';
 import { flagState } from './state-utils.js';
+import { longAgo } from './json-utils.js';
 import AddComment from './AddComment.js';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
 
@@ -20,7 +21,8 @@ const CommentsList = ({
   topicId,
   propositionId,
   commentId,
-  noReply,
+  noComment,
+  member,
 }) => {
   const [addComment, setAddComment] = useState(false);
   let [commentEdit, setCommentEdit] = useState(null);
@@ -73,19 +75,35 @@ const CommentsList = ({
     });
   };
 
-  const noReplyOnEdit = () => commentEdit != null;
+  const cannotReply = (comment) => {
+    if (comment.member_id === member.id) return true;
+    return commentEdit != null;
+  };
+
+  const cannotEdit = (comment) => {
+    if (comment.member_id !== member.id) return true;
+    if (
+      Date.now() - new Date(comment.creation_timestamp) >
+      // Edit is not allowed after 1 day.
+      1000 * 60 * 60 * 24 * 1
+    ) {
+      return true;
+    }
+    return comment.comments.length !== 0;
+  };
 
   return (
     <Fragment>
-      {noReply?.() ? (
-        ''
-      ) : (
+      <Tooltip title="Add your own comment. Your nickname and address will be visible with it.">
         <IconButton
           edge="end"
           aria-label="add comment"
           onClick={addNewComment}
           size="small"
-          sx={{ marginLeft: '16px' }}
+          sx={{
+            marginLeft: '8px',
+            visibility: noComment?.() ? 'hidden' : 'visible',
+          }}
         >
           {propositionId ? (
             <InsertCommentOutlinedIcon fontSize="xsmall" />
@@ -93,8 +111,8 @@ const CommentsList = ({
             <ReplyRoundedIcon fontSize="xsmall" />
           )}
         </IconButton>
-      )}
-      <Stack sx={{ marginLeft: '32px' }}>
+      </Tooltip>
+      <Stack sx={{ marginLeft: '8px' }}>
         {addComment ? (
           <AddComment
             setEditComment={setAddComment}
@@ -104,6 +122,7 @@ const CommentsList = ({
             topicId={topicId}
             propositionId={propositionId}
             commentId={commentId}
+            member={member}
           />
         ) : (
           ''
@@ -112,28 +131,38 @@ const CommentsList = ({
           {[...comments].reverse().map((comment, i) => (
             <ListItem disablePadding={true} key={comment.id}>
               <ListItemText
+                sx={{ margin: '0' }}
                 primary={
                   <Fragment>
                     {commentEdit !== i ? (
                       <Fragment>
                         {comment.discussion}
-                        <IconButton
-                          sx={{ marginLeft: '32px' }}
-                          edge="end"
-                          aria-label="edit comment"
-                          size="small"
-                          onClick={() => editComment(i)}
+                        <span
+                          style={{
+                            paddingLeft: '16px',
+                          }}
                         >
-                          <EditOutlinedIcon fontSize="xsmall" />
-                        </IconButton>
-                        <IconButton
-                          edge="end"
-                          aria-label="delete comment"
-                          size="small"
-                          onClick={() => confirmDelete(i)}
-                        >
-                          <DeleteOutlineIcon fontSize="xsmall" />
-                        </IconButton>{' '}
+                          (
+                          <Tooltip title={comment.address}>
+                            <span>{comment.name || 'Ex member'}</span>
+                          </Tooltip>
+                          &nbsp; - {longAgo(comment.creation_timestamp)})
+                        </span>
+                        {cannotEdit(comment) ? (
+                          ''
+                        ) : (
+                          <IconButton
+                            sx={{
+                              marginLeft: '8px',
+                            }}
+                            edge="end"
+                            aria-label="edit comment"
+                            size="small"
+                            onClick={() => editComment(i)}
+                          >
+                            <EditOutlinedIcon fontSize="xsmall" />
+                          </IconButton>
+                        )}
                       </Fragment>
                     ) : (
                       <AddComment
@@ -144,6 +173,8 @@ const CommentsList = ({
                         topicId={topicId}
                         propositionId={propositionId}
                         commentId={commentId}
+                        confirmDelete={() => confirmDelete(i)}
+                        member={member}
                       />
                     )}
                     <CommentsList
@@ -153,7 +184,8 @@ const CommentsList = ({
                       comments={comment.comments}
                       topicId={topicId}
                       commentId={comment.id}
-                      noReply={noReplyOnEdit}
+                      noComment={() => cannotReply(comment)}
+                      member={member}
                     />
                   </Fragment>
                 }

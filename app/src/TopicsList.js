@@ -221,6 +221,12 @@ const TopicsList = () => {
 
   const cannotEdit = (topic) => {
     if (topic.member_id !== member.id) return true;
+    if (
+      Date.now() - new Date(topic.creation_timestamp) >
+      // Edit is not allowed after 1 day.
+      1000 * 60 * 60 * 24 * 1
+    )
+      return true;
     return topic.propositions.some(
       (p) => p.votes_up !== 0 || p.votes_down !== 0 || p.comments.length !== 0,
     );
@@ -237,6 +243,8 @@ const TopicsList = () => {
     }
     return false;
   };
+
+  const cannotComment = (topic) => topic.member_id === member.id;
 
   return (
     <Stack>
@@ -394,13 +402,13 @@ const TopicsList = () => {
               <Stack
                 sx={{
                   width: '100%',
-                  maxHeight: expanded[i] ? 'auto' : '110px',
+                  maxHeight: expanded[i] ? 'auto' : '140px',
                   minHeight: '80px',
                   overflowY: 'scroll',
                 }}
                 ref={(node) => {
                   if (!node) return;
-                  needsExpand[i] = node.offsetHeight >= 110;
+                  needsExpand[i] = node.offsetHeight >= 140;
                   setNeedsExpand(needsExpand);
                 }}
               >
@@ -413,6 +421,7 @@ const TopicsList = () => {
                     )}
                   </ListItemIcon>
                   <ListItemText
+                    sx={{ margin: 0 }}
                     disableTypography
                     primary={
                       <Fragment>
@@ -444,7 +453,11 @@ const TopicsList = () => {
                           {topicTags(topic)}
                           {topic.type === 'announcement' ? (
                             <Fragment>
-                              {topic.description ? '' : 'Comment: '}
+                              {topic.description
+                                ? ''
+                                : cannotComment(topic)
+                                  ? ''
+                                  : 'Comment: '}
                               <CommentsList
                                 checkChange={checkChange}
                                 setChanged={setTopicChanged}
@@ -452,6 +465,8 @@ const TopicsList = () => {
                                 comments={topic.propositions[0].comments}
                                 topicId={topic.id}
                                 propositionId={topic.propositions[0].id}
+                                noComment={() => cannotComment(topic)}
+                                member={member}
                               />
                             </Fragment>
                           ) : (
@@ -517,6 +532,8 @@ const TopicsList = () => {
                               comments={proposition.comments}
                               topicId={topic.id}
                               propositionId={proposition.id}
+                              noComment={() => cannotComment(topic)}
+                              member={member}
                             />
                           </Box>
                           <Box sx={{ whiteSpace: 'nowrap' }}>

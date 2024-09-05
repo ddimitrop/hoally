@@ -1,4 +1,9 @@
-import { handleErrors } from '../../app/src/errors.mjs';
+import {
+  AppError,
+  NO_ADMIN_ROLE,
+  NO_ACCESS,
+  handleErrors,
+} from '../../app/src/errors.mjs';
 import { getUser } from './hoauser.mjs';
 
 export class Community {
@@ -42,6 +47,10 @@ export class Community {
       returning *
       `;
 
+      if (!community) {
+        throw new AppError(NO_ADMIN_ROLE);
+      }
+
       await sql`
       update member 
         set address = ${adminAddress}
@@ -64,7 +73,7 @@ export class Community {
     const id = this.getData().id;
     if (!intro) intro = DEFAULT_INTRO;
     if (!invitationText) invitationText = DEFAULT_INVITATION_TEXT;
-    await sql`
+    const [community] = await sql`
       update community
       set intro = ${intro},
           invitation_text = ${invitationText}
@@ -73,8 +82,15 @@ export class Community {
         id in (select community_id 
                from member 
               where hoauser_id = ${hoaUserId} and
-              is_admin = true)     
+              is_admin = true)
+
+        returning *
     `;
+
+    if (!community) {
+      throw new AppError(NO_ADMIN_ROLE);
+    }
+
     this.data.intro = intro;
     this.data.invitation_text = invitationText;
   }
@@ -83,14 +99,21 @@ export class Community {
     const { sql } = this.connection;
     const id = this.getData().id;
     const hoaUserId = this.hoaUserId;
-    await sql`
+    const [community] = await sql`
       delete from community
       where
         id = ${id} and
         id in (select community_id 
                from member 
               where hoauser_id = ${hoaUserId} and
-              is_admin = true)`;
+              is_admin = true)
+
+      returning *
+      `;
+
+    if (!community) {
+      throw new AppError(NO_ADMIN_ROLE);
+    }
   }
 
   static async create(
@@ -170,6 +193,7 @@ export class Community {
         from community c 
         inner join member m 
         on (c.id = m.community_id)
+        where c.id in (select community_id from member where hoauser_id = ${hoaUserId})
         group by c.id, c.name, c.address, c.city, c.state, c.zipcode,
                  c.intro, c.invitation_text
         order by c.id`;
@@ -199,10 +223,14 @@ export class Community {
         from community c 
         inner join member m 
         on (c.id = m.community_id) 
-        where c.id = ${id}
+        where c.id = ${id} and
+              c.id in (select community_id from member where hoauser_id = ${hoaUserId})
         group by c.id, c.name, c.address, c.city, c.state, c.zipcode,
                  c.intro, c.invitation_text`;
 
+    if (!community) {
+      throw new AppError(NO_ACCESS);
+    }
     return new Community(connection, community, hoaUserId);
   }
 }

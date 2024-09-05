@@ -176,7 +176,8 @@ export class Topic {
 
     const [comment] = await sql`
       update comment
-      set discussion = ${discussion}
+      set discussion = ${discussion},
+          last_update_timestamp = LOCALTIMESTAMP
       where
         id = ${id} and
         topic_id = ${topicId}
@@ -311,14 +312,18 @@ export class Topic {
     });
 
     const comments = await sql`
-        select * from comment 
-        where topic_id in (
+        select c.*, m.address, h.encrypted_name as name
+        from comment c
+        join member m on m.id = c.member_id
+        left join hoauser h on m.hoauser_id = h.id
+        where c.topic_id in (
             select id from topic 
             where community_id=${communityId})
             order by id asc`;
 
     const commentsById = {};
     comments.forEach((comment) => {
+      comment.name = crypto.decrypt(comment.name);
       comment.comments = [];
       commentsById[comment.id] = comment;
       let subComments;
@@ -385,12 +390,16 @@ export class Topic {
     });
 
     const comments = await sql`
-        select * from comment 
+        select c.*, m.address, h.encrypted_name as name
+        from comment c
+        join member m on m.id = c.member_id
+        left join hoauser h on m.hoauser_id = h.id
         where topic_id = ${id}
         order by id asc`;
 
     const commentsById = {};
     comments.forEach((comment) => {
+      comment.name = crypto.decrypt(comment.name);
       comment.comments = [];
       commentsById[comment.id] = comment;
       let subComments;

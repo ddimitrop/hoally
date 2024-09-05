@@ -10,6 +10,10 @@ export const ACCESS_TOKEN_INVALID = 'Access token invalid';
 export const EMAIL_NOT_REGISTERED = 'Email not registered';
 // There is an attempt to register with an invitation token but its invalid or has expired.
 export const INVITATION_TOKEN_INVALID = 'Invitation token invalid';
+// Doing admin operations on a community without the appropriate role.
+export const NO_ADMIN_ROLE = 'You are not a community admin';
+// No access to a source.
+export const NO_ACCESS = 'You have no access';
 
 export const APP_ERRORS = [
   NO_AUTHENTICATION_COOKIE,
@@ -18,6 +22,7 @@ export const APP_ERRORS = [
   ACCESS_TOKEN_INVALID,
   INVITATION_TOKEN_INVALID,
   EMAIL_NOT_REGISTERED,
+  NO_ADMIN_ROLE,
 ];
 
 export class AppError extends Error {}

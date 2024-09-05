@@ -81,7 +81,10 @@ const CommunityIntro = ({ stepper, community, members }) => {
       intro: data.intro,
       invitation_text: data.invitation_text,
     })
-      .then(({ ok }) => {
+      .then(({ ok, appError }) => {
+        if (appError) {
+          global.setAppError(appError);
+        }
         if (ok) {
           Object.assign(community, data);
           setIntroChanged(false);
