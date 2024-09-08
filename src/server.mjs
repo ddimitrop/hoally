@@ -101,7 +101,7 @@ export function parseOptions(program, args) {
 }
 
 export function prepareConnection(options) {
-  const SECRETS_DIRECTORY = options.secrets || '/run/secrets/hoally';
+  const SECRETS_DIRECTORY = options.secrets || '/usr/lib/hoally/run/secrets';
   const environment = options.prod ? 'prod' : 'dev';
 
   const cryptoSecrets = fs.readFileSync(

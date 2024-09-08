@@ -13,6 +13,16 @@ then
   environment=dev
 fi
 
+RUN=/usr/lib/hoally/run/
+SECRETS=${RUN}secrets/
+DATA=${RUN}data/
+
 docker stop hoally-$environment 2>/dev/null
-docker container rm hoally-$environment 2>/dev/null
-docker run -d --rm -p 8080:8080 --name  hoally-$environment hoally:$version
+docker run --rm -t \
+  -v ${RUN}:${RUN} \
+  -e POSTGRES_PASSWORD_FILE=${SECRETS}postgres-passwd \
+  -e PGDATA=${DATA} \
+  -p 8080:80 \
+  --stop-signal SIGINT \
+  --stop-timeout 90 \
+  --name hoally-$environment hoally:$version

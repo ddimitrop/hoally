@@ -115,7 +115,7 @@ CREATE TABLE topic (
     is_open boolean NOT NULL DEFAULT true,
     creation_timestamp TIMESTAMP WITH TIME ZONE DEFAULT LOCALTIMESTAMP,
     last_update_timestamp TIMESTAMP WITH TIME ZONE,
-    archive_timestamp TIMESTAMP WITH TIME ZONE,
+    archive_timestamp TIMESTAMP WITH TIME ZONE
 );
 
 CREATE INDEX ON topic USING GIN (tags);
