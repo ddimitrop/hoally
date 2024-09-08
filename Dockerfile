@@ -24,6 +24,6 @@ WORKDIR /usr/lib/hoally/
 
 EXPOSE 80/tcp
 
-ENTRYPOINT ["docker-start.sh"] CMD
+ENTRYPOINT /usr/local/bin/docker-start.sh CMD
 
 STOPSIGNAL SIGINT
