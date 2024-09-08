@@ -5,7 +5,7 @@ environment=$2
 
 if [ ! $version ]
 then 
-  version=1.0
+  version=1.03
 fi
 
 if [ ! $environment ]
@@ -24,5 +24,5 @@ docker run --rm -t \
   -e PGDATA=${DATA} \
   -p 8080:80 \
   --stop-signal SIGINT \
-  --stop-timeout 90 \
+  --stop-timeout 30 \
   --name hoally-$environment hoally:$version
