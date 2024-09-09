@@ -12,6 +12,7 @@ import { topicApi } from './db/topic.mjs';
 import cors from 'cors';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { createTransport } from 'nodemailer';
+import https from 'https';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -65,9 +66,25 @@ export class Server {
       });
     }
 
-    this.app.listen(port, () => {
-      console.log(`Listening on port ${port}`);
-    });
+    if (this.options.https) {
+      const certPath =
+        this.options.cert || '/etc/letsencrypt/live/www.hoally.net/';
+
+      const certOptions = {
+        key: fs.readFileSync(`${certPath}privkey.pem`),
+        cert: fs.readFileSync(`${certPath}fullchain.pem`),
+      };
+
+      const httpsServer = https.createServer(certOptions, this.app);
+      httpsServer.listen(port);
+      httpsServer.on('listening', (e) => {
+        console.log(`Listening for https on port ${port}`);
+      });
+    } else {
+      this.app.listen(port, () => {
+        console.log(`Listening on port ${port}`);
+      });
+    }
   }
 }
 
@@ -94,6 +111,7 @@ export function parseOptions(program, args) {
     .option('--https', 'Use https protocol')
     .option('--proxy <string>', 'Proxy for development')
     .option('--prod', 'Prod environment (default port 80 or 443 for https)')
+    .option('--cert <string>', 'Path to the https cetificate directory')
     .option('--secrets <string>', 'Path to the secrets directory');
   program.parse(args);
 
@@ -180,6 +198,7 @@ const api = {
 
 export function startServer() {
   const app = express();
+
   const program = new Command();
 
   const options = parseOptions(program, process.argv);

@@ -14,7 +14,6 @@ import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
 import { useState, Fragment } from 'react';
 import AddMember from './AddMember.js';
-import { Info } from './Utils.js';
 import ConfirmDialog from './ConfirmDialog.js';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
 import { flagState } from './state-utils.js';

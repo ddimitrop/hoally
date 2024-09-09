@@ -36,6 +36,8 @@ const CommunityDetails = ({ stepper, community, moveNext }) => {
 
   const isNewCommunity = () => !community.id;
 
+  const readOnly = () => community.id && !community.is_admin;
+
   const needsUpdate = () => {
     const newData = getFormData(createForm.current);
     return hasModifications(community, newData);
@@ -115,7 +117,7 @@ const CommunityDetails = ({ stepper, community, moveNext }) => {
                 autoComplete="no-auto-complete"
                 variant="standard"
                 InputProps={{
-                  readOnly: !community.is_admin,
+                  readOnly: readOnly(),
                 }}
               />
               <Info title="The official name of the community" />
@@ -133,7 +135,7 @@ const CommunityDetails = ({ stepper, community, moveNext }) => {
                     variant: 'standard',
                     autoComplete: 'new-password',
                   }}
-                  readOnly={!community.is_admin}
+                  readOnly={readOnly()}
                   initValue={community.address || ''}
                   onSelect={(city, state, zip) => {
                     setCityValue(city);
@@ -158,7 +160,7 @@ const CommunityDetails = ({ stepper, community, moveNext }) => {
                 fullWidth
                 variant="standard"
                 InputProps={{
-                  readOnly: !community.is_admin,
+                  readOnly: readOnly(),
                 }}
                 onChange={(e) => setCityValue(e.target.value)}
               />
@@ -178,7 +180,7 @@ const CommunityDetails = ({ stepper, community, moveNext }) => {
                 autoComplete="address-level1"
                 variant="standard"
                 InputProps={{
-                  readOnly: !community.is_admin,
+                  readOnly: readOnly(),
                 }}
                 onChange={(e) => setStateValue(e.target.value)}
               />
@@ -199,7 +201,7 @@ const CommunityDetails = ({ stepper, community, moveNext }) => {
                 fullWidth
                 variant="standard"
                 InputProps={{
-                  readOnly: !community.is_admin,
+                  readOnly: readOnly(),
                 }}
                 onChange={(e) => setZipValue(e.target.value)}
               />
@@ -215,7 +217,7 @@ const CommunityDetails = ({ stepper, community, moveNext }) => {
                 fullWidth
                 variant="standard"
                 InputProps={{
-                  readOnly: !community.is_admin,
+                  readOnly: readOnly(),
                 }}
                 autoComplete="street-address"
               />
@@ -232,7 +234,7 @@ const CommunityDetails = ({ stepper, community, moveNext }) => {
           justifyContent="end"
           alignItems="center"
         >
-          {community.id && community.is_admin ? (
+          {community.id && !readOnly() ? (
             <Button color="error" onClick={showDeleteCommunity}>
               Delete community
             </Button>

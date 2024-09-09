@@ -124,7 +124,7 @@ const SingupDialog = ({ control, skipRedirect, defaultEmail }) => {
       .then((ok) => {
         if (!ok || nameUsed.hasError() || emailUsed.hasError()) return;
         return postData('/api/hoauser', data).then(({ hoaUser }) => {
-          if (defaultEmail && hoaUser.email !== defaultEmail) {
+          if (!defaultEmail || hoaUser.email !== defaultEmail) {
             sendValidationEmail(hoaUser.email)
               .then(() => {
                 setSignupSuccess(true);

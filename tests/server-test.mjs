@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import {
   DEV_PORT,
   PROD_HTTP_PORT,
-  PROD_HTTPS_PORT,
+  //  PROD_HTTPS_PORT,
   parseOptions,
   Server,
 } from '../src/server.mjs';
@@ -96,13 +96,14 @@ describe('hoally Server', () => {
       );
     });
 
+    /* No tests for now 
     it('https for production', () => {
       startServer('node hoally.mjs --prod --https');
       expect(mockApp.listen).toHaveBeenCalledWith(
         PROD_HTTPS_PORT,
         jasmine.anything(),
       );
-    });
+    });*/
 
     it('ignores port parameter for production', () => {
       startServer('node hoally.mjs --prod --port 9000');

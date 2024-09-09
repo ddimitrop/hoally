@@ -28,6 +28,7 @@ const ValidationWarning = () => {
   return global.needsEmailValidation && open ? (
     <Fragment>
       <Alert
+        className="top-alert"
         severity="warning"
         onClose={closeAlert}
         sx={{
