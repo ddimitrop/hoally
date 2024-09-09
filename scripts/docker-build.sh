@@ -4,7 +4,7 @@ version=$1
 
 if [ ! $version ]
 then 
-  version=1.03
+  version=1.04
 fi
 
 docker build -t hoally:$version .

@@ -16,4 +16,4 @@ then
 fi
 
 
-node src/hoally.mjs --prod "$@"
+node src/hoally.mjs --prod --https "$@"

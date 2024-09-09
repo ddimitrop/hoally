@@ -4,6 +4,9 @@ COPY scripts/docker-start.sh  /usr/local/bin/
 
 RUN apk add nodejs
 RUN apk add npm
+RUN apk add certbot
+
+RUN (crontab -l; echo "27      7       *       *       *       certbot renew -q")| crontab -
 
 COPY src/ /usr/lib/hoally/src/
 COPY package.json /usr/lib/hoally/
@@ -24,6 +27,6 @@ WORKDIR /usr/lib/hoally/
 
 EXPOSE 80/tcp
 
-ENTRYPOINT /usr/local/bin/docker-start.sh CMD
+ENTRYPOINT ["/usr/local/bin/docker-start.sh"]
 
 STOPSIGNAL SIGINT

@@ -6,7 +6,7 @@
   "scripts": {
     "prestart": "cd app; npm run build",
     "start": "node src/hoally.mjs",
-    "start-dev": "nodemon src/hoally.mjs -- --proxy 'http://lacroix.local:3000' --port 8081",
+    "start-dev": "nodemon src/hoally.mjs -- --proxy 'http://lacroix.local:3000' --port 8081 --secrets '/home/hoa/hoally-run/secrets' --https --cert '/etc/letsencrypt/live/lacroix.mynetgear.com/'",
     "test": "npx jasmine --config=jasmine.json",
     "integration": "npx jasmine --config=jasmine-integration.json",
     "container": "bash scripts/docker-build.sh",
@@ -36,6 +36,7 @@
     "dompurify": "^3.1.6",
     "express": "^4.19.2",
     "http-proxy-middleware": "^3.0.0",
+    "https": "^1.0.0",
     "jsdom": "^24.1.1",
     "marked": "^14.0.0",
     "nodemailer": "^6.9.14",

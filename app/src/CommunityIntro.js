@@ -2,7 +2,7 @@ import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import { Global } from './Global.js';
-import { useRef, useContext, useState, useEffect, Fragment } from 'react';
+import { useRef, useContext, useState, Fragment } from 'react';
 import { hasModifications } from './state-utils';
 import ConfirmDialog from './ConfirmDialog.js';
 import { postData } from './json-utils.js';

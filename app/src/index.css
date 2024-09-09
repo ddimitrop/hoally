@@ -155,3 +155,8 @@ body {
   flex-grow: 1;
   width: calc(100% - 48px);
 }
+
+.top-alert + .main-content {
+  /* 56 (topbar) + 48 alert + 2 * 24 */
+  height: calc(100% - 162px);
+}
