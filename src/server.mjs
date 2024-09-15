@@ -12,7 +12,9 @@ import { topicApi } from './db/topic.mjs';
 import cors from 'cors';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { createTransport } from 'nodemailer';
+import http from 'http';
 import https from 'https';
+import { forceDomain } from 'forcedomain';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -66,6 +68,20 @@ export class Server {
       });
     }
 
+    // Redirect other domains to www
+    if (this.options.forcedomain) {
+      const options = {
+        hostname: this.options.forcedomain,
+      };
+      if (!this.options.prod) {
+        options.port = port;
+      }
+      if (!this.options.https) {
+        options.protocol = 'https';
+      }
+      this.app.use(forceDomain(options));
+    }
+
     if (this.options.https) {
       const certPath =
         this.options.cert || '/etc/letsencrypt/live/www.hoally.net/';
@@ -74,6 +90,18 @@ export class Server {
         key: fs.readFileSync(`${certPath}privkey.pem`),
         cert: fs.readFileSync(`${certPath}fullchain.pem`),
       };
+
+      // Redirect http to https.
+      const httpPort = this.options.prod ? PROD_HTTP_PORT : port + 2;
+      const httpApp = this.express();
+      httpApp.get('*', function (req, res, next) {
+        const host = req.headers.host.replace(`:${httpPort}`, `:${port}`);
+        const path = req.path;
+        res.redirect(301, `https://${host}${path}`);
+      });
+      http.createServer(httpApp).listen(httpPort, function () {
+        console.log(`Redirecting http port ${httpPort} to ${port}`);
+      });
 
       const httpsServer = https.createServer(certOptions, this.app);
       httpsServer.listen(port);
@@ -112,7 +140,8 @@ export function parseOptions(program, args) {
     .option('--proxy <string>', 'Proxy for development')
     .option('--prod', 'Prod environment (default port 80 or 443 for https)')
     .option('--cert <string>', 'Path to the https cetificate directory')
-    .option('--secrets <string>', 'Path to the secrets directory');
+    .option('--secrets <string>', 'Path to the secrets directory')
+    .option('--forcedomain <string>', 'Redirect request to domain');
   program.parse(args);
 
   return program.opts();

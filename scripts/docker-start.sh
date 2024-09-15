@@ -16,4 +16,4 @@ then
 fi
 
 
-node src/hoally.mjs --prod --https "$@"
+node src/hoally.mjs --prod --https --forcedomain www.hoally.net "$@"

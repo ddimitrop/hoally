@@ -162,7 +162,7 @@ const AddTopic = ({ topic, confirmDelete, member, done, setChanged }) => {
           </Select>
         </FormControl>
       </Grid>
-      <Grid item xs={12}>
+      <Grid item md={9} xs={7}>
         <TextField
           margin="dense"
           id="description"
@@ -170,6 +170,8 @@ const AddTopic = ({ topic, confirmDelete, member, done, setChanged }) => {
           label="Details"
           defaultValue={topic.description}
           fullWidth
+          multiline
+          maxRows={4}
           autoComplete="no-auto-complete"
           variant="standard"
           size="small"

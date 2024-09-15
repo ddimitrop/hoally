@@ -52,7 +52,6 @@ const TopicsList = () => {
   let [voteCount, setVoteCount] = useState(0);
   const [commentCancel, setCommentCancel] = useState(null);
   const [expanded, setExpanded] = useState([]);
-  const [needsExpand, setNeedsExpand] = useState([]);
 
   const isHiddenIntro = () => {
     return Date.now() < Number(localStorage.getItem('hiddenIntro'));
@@ -126,7 +125,7 @@ const TopicsList = () => {
     global.setAppError(memberError);
   }
 
-  const topicsList = data.topics || [];
+  let topicsList = data.topics || [];
   const { error: topicsError } = topicsList;
   if (topicsError) {
     global.setAppError(topicsError);
@@ -384,7 +383,7 @@ const TopicsList = () => {
                   )}
                   <Tooltip title={expanded[i] ? 'Collapse' : 'Expand'}>
                     <IconButton
-                      sx={{ visibility: needsExpand[i] ? 'visible' : 'hidden' }}
+                      className="expand-button"
                       edge="end"
                       aria-label="expand"
                       onClick={() => toggleExpand(i)}
@@ -408,8 +407,12 @@ const TopicsList = () => {
                 }}
                 ref={(node) => {
                   if (!node) return;
-                  needsExpand[i] = node.offsetHeight >= 140;
-                  setNeedsExpand(needsExpand);
+                  const needsExpand = node.offsetHeight >= 140;
+                  const expandButton =
+                    node.parentElement.querySelector('.expand-button');
+                  expandButton.style.visibility = needsExpand
+                    ? 'visible'
+                    : 'hidden';
                 }}
               >
                 <Stack direction="row" alignItems="start">

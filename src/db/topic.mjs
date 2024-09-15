@@ -477,7 +477,7 @@ export function topicApi(connection, app) {
       } = req.body;
       const topicInst = await Topic.get(connection, hoaUserId, id);
 
-      topicInst.update(
+      await topicInst.update(
         memberId,
         communityId,
         type,
