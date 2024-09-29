@@ -30,7 +30,7 @@ const InvitationsDialog = ({ control, community, members }) => {
     members.map((member) => !useEmail || !!member.invitation_email);
   const [selected, setSelected] = useState(defaultSelected(hasEmails));
 
-  const isSelected = (i) => selected[i] || true;
+  const isSelected = (i) => (selected[i] !== undefined ? selected[i] : true);
 
   const switchByEmail = (byEmail) => {
     setByEmail(byEmail);

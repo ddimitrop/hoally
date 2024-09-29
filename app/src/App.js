@@ -53,7 +53,7 @@ export default function App() {
     }
     // We just ignore appErrors like no/invalid auth cookie
     defaultNavigate();
-  });
+  }, []);
 
   return (
     <Global.Provider value={global}>

@@ -9,6 +9,10 @@ let needsLanding = false;
 export default function GlobalContext({ children }) {
   const [hoaUser, setHoaUser] = useState({});
   const [appError, setAppError] = useState('');
+  const onClose = () => {
+    setAppError('');
+  };
+  const [appErrorClose, setAppErrorClose] = useState({ onClose });
   const [needsEmailValidation, setNeedsEmailValidation] = useState(false);
   const getCurrentUser = () => currentUser;
   const isAuthenticated = () => !!currentUser.name;
@@ -23,6 +27,16 @@ export default function GlobalContext({ children }) {
     setNeedsEmailValidation(hoaUser.email_validated === false);
   }
 
+  function customErrorClose(cb) {
+    setAppErrorClose({
+      onClose: () => {
+        cb();
+        setAppError('');
+        setAppErrorClose({ onClose });
+      },
+    });
+  }
+
   return (
     <Global.Provider
       value={{
@@ -31,6 +45,8 @@ export default function GlobalContext({ children }) {
         getCurrentUser,
         appError,
         setAppError,
+        appErrorClose,
+        customErrorClose,
         needsEmailValidation,
         setNeedsEmailValidation,
         isAuthenticated,

@@ -102,9 +102,13 @@ const AddTopic = ({ topic, confirmDelete, member, done, setChanged }) => {
     data.id = topic.id;
     data.member_id = member.id;
     return postData(`/api/topic/${communityId}`, data, isNew ? 'POST' : 'PUT')
-      .then(({ topic: savedTopic }) => {
-        Object.assign(topic, savedTopic);
-        done(topic, isNew);
+      .then(({ appError, topic: savedTopic }) => {
+        if (appError) {
+          global.setAppError(appError);
+        } else {
+          Object.assign(topic, savedTopic);
+          done(topic, isNew);
+        }
       })
       .catch((e) => {
         global.setAppError(e.message);

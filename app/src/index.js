@@ -10,6 +10,7 @@ import CommunityList, { communitiesLoader } from './CommunityList';
 import CreateCommunity, { communityLoader } from './CreateCommunity';
 import TopicsList, { topicsLoader } from './TopicsList';
 import InvitationAccept, { invitationLoader } from './InvitationAccept';
+import InvitationReject, { rejectLoader } from './InvitationReject';
 import GlobalContext from './Global';
 import { StrictMode } from 'react';
 import { RequireAuth, DefaultLanding } from './Navigate';
@@ -42,6 +43,11 @@ const router = createBrowserRouter([
         path: 'invitation/:token',
         element: <InvitationAccept />,
         loader: invitationLoader,
+      },
+      {
+        path: 'unregister/:token',
+        element: <InvitationReject />,
+        loader: rejectLoader,
       },
       {
         path: 'community',

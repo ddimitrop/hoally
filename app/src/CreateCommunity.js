@@ -3,7 +3,7 @@ import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
 import Stack from '@mui/material/Stack';
 import SlideContents from './SlideContents.js';
-import { useContext, useEffect, Fragment } from 'react';
+import { useState, useContext, useEffect, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLoaderData } from 'react-router-dom';
 import CommunityDetails from './CommunityDetails.js';
@@ -12,6 +12,7 @@ import CommunityIntro from './CommunityIntro.js';
 import { getData } from './json-utils.js';
 import { useStepper } from './state-utils.js';
 import { Global } from './Global.js';
+import { NO_AUTHENTICATION_COOKIE } from './errors.mjs';
 
 let moveNextOnLoad = false;
 
@@ -19,6 +20,7 @@ const CreateCommunity = () => {
   const global = useContext(Global);
   const navigate = useNavigate();
   const stepper = useStepper(0);
+  const [hasRedirect, setHasRedirect] = useState(false);
 
   useEffect(() => {
     if (moveNextOnLoad) {
@@ -32,17 +34,30 @@ const CreateCommunity = () => {
   };
 
   const data = useLoaderData() || {};
-  const community = data.community || {};
-  const members = data.members || [];
 
-  useEffect(() => {
-    const errorMessage =
-      data.error || community.error || community.appError || members.error;
-    if (errorMessage) {
-      global.setAppError(errorMessage);
-      navigate('/community');
+  let { community, members } = data;
+  community = community || {};
+  members = members || [];
+  let errorMessage = data.error;
+  for (const part of [community, members]) {
+    const { error, appError } = part;
+    errorMessage ||= error || appError;
+  }
+  if (errorMessage) {
+    if (errorMessage != NO_AUTHENTICATION_COOKIE) {
+      setTimeout(() => {
+        if (!hasRedirect) {
+          setHasRedirect(true);
+          global.setAppError(errorMessage);
+          global.customErrorClose(() => {
+            navigate('/community');
+          });
+        }
+      }, 0);
     }
-  }, []);
+    community = {};
+    members = [];
+  }
 
   return (
     <Fragment>

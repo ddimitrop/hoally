@@ -11,7 +11,7 @@ const GlobalSnackBar = () => {
       size="small"
       aria-label="close"
       color="inherit"
-      onClick={() => global.setAppError('')}
+      onClick={() => global.appErrorClose.onClose()}
     >
       <CloseIcon fontSize="small" />
     </IconButton>
@@ -21,7 +21,7 @@ const GlobalSnackBar = () => {
     <Snackbar
       open={!!global.appError}
       autoHideDuration={6000}
-      onClose={() => global.setAppError('')}
+      onClose={() => global.appErrorClose.onClose()}
       message={global.appError}
       action={action}
     />

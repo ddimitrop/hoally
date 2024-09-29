@@ -1,4 +1,5 @@
 import Checkbox from '@mui/material/Checkbox';
+import Chip from '@mui/material/Chip';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Grid from '@mui/material/Grid';
 import Fade from '@mui/material/Fade';
@@ -6,8 +7,9 @@ import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Button from '@mui/material/Button';
 import { Global } from './Global.js';
-import { useRef, useEffect, useContext, useState } from 'react';
-import { hasModifications } from './state-utils';
+import { useRef, useEffect, useContext, useState, Fragment } from 'react';
+import ConfirmDialog from './ConfirmDialog.js';
+import { hasModifications, flagState } from './state-utils';
 import { useParams } from 'react-router-dom';
 import { postData } from './json-utils.js';
 
@@ -23,6 +25,7 @@ const AddMember = ({ member, done, setChanged, addresses }) => {
   const isObserver = useRef(null);
   const [selectNumber, setSelectNumber] = useState(true);
   const [addressInValid, setAddressInValid] = useState(false);
+  const unassignDialog = flagState(useState(false));
   const { communityId } = useParams();
 
   const isNewMember = () => !member.id;
@@ -72,9 +75,35 @@ const AddMember = ({ member, done, setChanged, addresses }) => {
     data.id = member.id;
     data.community_id = communityId;
     return postData('/api/member', data, isNew ? 'POST' : 'PUT')
-      .then(({ member: savedMember }) => {
-        Object.assign(member, savedMember);
-        done(member, isNew);
+      .then(({ appError, member: savedMember }) => {
+        if (appError) {
+          global.setAppError(appError);
+        } else {
+          Object.assign(member, savedMember);
+          done(member, isNew);
+        }
+      })
+      .catch((e) => {
+        global.setAppError(e.message);
+      });
+  };
+
+  const confirmUnassign = () => {
+    unassignDialog.open();
+  };
+
+  const unassign = () => {
+    const data = { id: member.id, communityId };
+    return postData('/api/member/unassign', data)
+      .then(({ appError, member: savedMember }) => {
+        if (appError) {
+          global.setAppError(appError);
+        } else {
+          unassignDialog.close();
+          Object.assign(member, savedMember);
+          delete member.name;
+          done(member, false);
+        }
       })
       .catch((e) => {
         global.setAppError(e.message);
@@ -82,153 +111,192 @@ const AddMember = ({ member, done, setChanged, addresses }) => {
   };
 
   return (
-    <Grid
-      ref={addMemberForm}
-      component="form"
-      container
-      spacing={1}
-      sx={{ flexGrow: '1', maxWidth: 'sm' }}
-      onSubmit={(event) => {
-        event.preventDefault();
-        saveMember();
-      }}
-    >
-      <Grid item xs={12}>
-        <TextField
-          required
-          margin="dense"
-          id="address"
-          name="address"
-          label="Member address"
-          error={addressInValid}
-          helperText={addressInValid ? 'Duplicate address' : ''}
-          defaultValue={member.address}
-          fullWidth
-          autoComplete="no-auto-complete"
-          variant="standard"
-          autoFocus
-          inputRef={address}
-          onChange={checkWasChanged}
-        />
-      </Grid>
-      <Grid item xs={6}>
-        <TextField
-          margin="dense"
-          id="invitation_full_name"
-          name="invitation_full_name"
-          label="Invitation name"
-          defaultValue={member.invitation_full_name}
-          fullWidth
-          autoComplete="no-auto-complete"
-          variant="standard"
-          inputRef={invitationFullName}
-          onChange={checkWasChanged}
-        />
-      </Grid>
-      <Grid item xs={6}>
-        <TextField
-          margin="dense"
-          id="invitation_email"
-          name="invitation_email"
-          label="Invitation email"
-          type="email"
-          defaultValue={member.invitation_email}
-          fullWidth
-          autoComplete="no-auto-complete"
-          variant="standard"
-          inputRef={invitationEmail}
-          onChange={checkWasChanged}
-        />
-      </Grid>
-      <Grid item xs={12}>
-        <Tooltip
-          TransitionComponent={Fade}
-          TransitionProps={{ timeout: 600 }}
-          title="A board member can archive topics and has no limits on posts."
-        >
-          <FormControlLabel
-            control={
-              <Checkbox
-                inputRef={isBoardMember}
-                defaultChecked={member.is_board_member}
-                onChange={checkWasChanged}
-              />
-            }
-            label="Board member"
-          />
-        </Tooltip>
-        <Tooltip
-          TransitionComponent={Fade}
-          TransitionProps={{ timeout: 600 }}
-          title="A moderator can temporarily hide topics and comments that are not respectful and do not follow the Hoally guidelines."
-        >
-          <FormControlLabel
-            control={
-              <Checkbox
-                inputRef={isModerator}
-                defaultChecked={member.is_moderator}
-                onChange={checkWasChanged}
-              />
-            }
-            label="Moderator"
-          />
-        </Tooltip>
-        <Tooltip
-          TransitionComponent={Fade}
-          TransitionProps={{ timeout: 600 }}
-          title="An observer can post topics and reply to comments but can not vote."
-        >
-          <FormControlLabel
-            control={
-              <Checkbox
-                inputRef={isObserver}
-                defaultChecked={member.is_observer}
-                onChange={checkWasChanged}
-              />
-            }
-            label="Observer"
-          />
-        </Tooltip>
-        <Tooltip
-          TransitionComponent={Fade}
-          TransitionProps={{ timeout: 600 }}
-          title="An admin can edit community and member properties and assign member roles."
-        >
-          <FormControlLabel
-            control={
-              <Checkbox
-                inputRef={isAdmin}
-                defaultChecked={member.is_admin}
-                onChange={checkWasChanged}
-              />
-            }
-            label="Admin"
-          />
-        </Tooltip>
-      </Grid>
+    <Fragment>
       <Grid
-        item
-        xs={12}
-        sx={{
-          display: 'flex',
-          justifyContent: 'end',
-          alignItems: 'end',
-          gap: '12px',
+        ref={addMemberForm}
+        component="form"
+        container
+        spacing={1}
+        sx={{ flexGrow: '1', maxWidth: 'sm' }}
+        onSubmit={(event) => {
+          event.preventDefault();
+          saveMember();
         }}
       >
-        <Button
-          variant="outlined"
-          onClick={() => {
-            done();
+        <Grid item xs={12}>
+          <TextField
+            required
+            margin="dense"
+            id="address"
+            name="address"
+            label="Member address"
+            error={addressInValid}
+            helperText={addressInValid ? 'Duplicate address' : ''}
+            defaultValue={member.address}
+            fullWidth
+            autoComplete="no-auto-complete"
+            variant="standard"
+            autoFocus
+            inputRef={address}
+            onChange={checkWasChanged}
+          />
+        </Grid>
+        <Grid item xs={6}>
+          <TextField
+            margin="dense"
+            id="invitation_full_name"
+            name="invitation_full_name"
+            label="Invitation name"
+            defaultValue={member.invitation_full_name}
+            fullWidth
+            autoComplete="no-auto-complete"
+            variant="standard"
+            inputRef={invitationFullName}
+            onChange={checkWasChanged}
+          />
+        </Grid>
+        <Grid item xs={6}>
+          <TextField
+            margin="dense"
+            id="invitation_email"
+            name="invitation_email"
+            label="Invitation email"
+            type="email"
+            defaultValue={member.invitation_email}
+            fullWidth
+            autoComplete="no-auto-complete"
+            variant="standard"
+            inputRef={invitationEmail}
+            onChange={checkWasChanged}
+          />
+        </Grid>
+        {member.name ? (
+          <Grid item xs={12}>
+            Assigned to user:
+            <Chip sx={{ marginLeft: '8px' }} label={member.name} />
+          </Grid>
+        ) : (
+          ''
+        )}
+        <Grid item xs={12}>
+          <Tooltip
+            TransitionComponent={Fade}
+            TransitionProps={{ timeout: 600 }}
+            title="A board member can archive topics and has no limits on posts."
+          >
+            <FormControlLabel
+              control={
+                <Checkbox
+                  inputRef={isBoardMember}
+                  defaultChecked={member.is_board_member}
+                  onChange={checkWasChanged}
+                />
+              }
+              label="Board member"
+            />
+          </Tooltip>
+          <Tooltip
+            TransitionComponent={Fade}
+            TransitionProps={{ timeout: 600 }}
+            title="A moderator can temporarily hide topics and comments that are not respectful and do not follow the Hoally guidelines."
+          >
+            <FormControlLabel
+              control={
+                <Checkbox
+                  inputRef={isModerator}
+                  defaultChecked={member.is_moderator}
+                  onChange={checkWasChanged}
+                />
+              }
+              label="Moderator"
+            />
+          </Tooltip>
+          <Tooltip
+            TransitionComponent={Fade}
+            TransitionProps={{ timeout: 600 }}
+            title="An observer can post topics and reply to comments but can not vote."
+          >
+            <FormControlLabel
+              control={
+                <Checkbox
+                  inputRef={isObserver}
+                  defaultChecked={member.is_observer}
+                  onChange={checkWasChanged}
+                />
+              }
+              label="Observer"
+            />
+          </Tooltip>
+          <Tooltip
+            TransitionComponent={Fade}
+            TransitionProps={{ timeout: 600 }}
+            title="An admin can edit community and member properties and assign member roles."
+          >
+            <FormControlLabel
+              control={
+                <Checkbox
+                  inputRef={isAdmin}
+                  defaultChecked={member.is_admin}
+                  onChange={checkWasChanged}
+                />
+              }
+              label="Admin"
+            />
+          </Tooltip>
+        </Grid>
+        <Grid
+          item
+          xs={6}
+          sx={{
+            display: 'flex',
+            justifyContent: 'start',
+            alignItems: 'end',
+            gap: '12px',
           }}
         >
-          Cancel
-        </Button>
-        <Button variant="contained" type="submit">
-          Save
-        </Button>
+          {member.name ? (
+            <Button
+              color="error"
+              onClick={() => {
+                confirmUnassign();
+              }}
+            >
+              Unassign
+            </Button>
+          ) : (
+            ''
+          )}
+        </Grid>
+        <Grid
+          item
+          xs={6}
+          sx={{
+            display: 'flex',
+            justifyContent: 'end',
+            alignItems: 'end',
+            gap: '12px',
+          }}
+        >
+          <Button
+            onClick={() => {
+              done();
+            }}
+          >
+            Cancel
+          </Button>
+          <Button variant="contained" type="submit">
+            Save
+          </Button>
+        </Grid>
       </Grid>
-    </Grid>
+      <ConfirmDialog
+        control={unassignDialog}
+        onConfirm={unassign}
+        title="Unassign member ?"
+        text={`Uassigning ${member.name} from community member would make their posts and comments anonymous.`}
+        action="Yes"
+      />
+    </Fragment>
   );
 };
 

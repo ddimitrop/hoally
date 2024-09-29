@@ -9,7 +9,7 @@ import parse from 'autosuggest-highlight/parse';
 import { debounce } from '@mui/material/utils';
 
 // HOAlly API key
-const GOOGLE_MAPS_API_KEY = 'AIzaSyBFzLWx9LyPD-yw6z90wvzICRpW8c9KeBY';
+const GOOGLE_MAPS_API_KEY = 'AIzaSyAp0n5HB3ihwxGoYHAG7X-kjiM0Ln_1uys';
 
 function loadScript(src, position, id) {
   if (!position) {

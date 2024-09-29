@@ -36,7 +36,7 @@ const DeleteConfirmDialog = ({
     setErrorMessage(`There was a problem: "${message}" - please try again.`);
   }
 
-  function deleteAccount() {
+  function doDelete() {
     postData(deleteApiPath, {}, deleteMethod || 'DELETE')
       .then(({ ok, appError }) => {
         if (appError) {
@@ -57,7 +57,7 @@ const DeleteConfirmDialog = ({
     <Fragment>
       <ConfirmDialog
         control={control}
-        onConfirm={deleteAccount}
+        onConfirm={doDelete}
         title={deleteTitle}
         text={deleteText}
         action={deleteAction || 'Delete'}

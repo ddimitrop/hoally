@@ -50,6 +50,20 @@ export class Server {
 
     this.api.init(this.connection, this.app);
 
+    // Redirect other domains to www
+    if (this.options.forcedomain) {
+      const options = {
+        hostname: this.options.forcedomain,
+      };
+      if (!this.options.prod) {
+        options.port = port;
+      }
+      if (this.options.https) {
+        options.protocol = 'https';
+      }
+      this.app.use(forceDomain(options));
+    }
+
     if (this.options.proxy) {
       // Proxying to react live server for fast development.
       this.app.use(cors());
@@ -66,20 +80,6 @@ export class Server {
       this.app.use((req, res, next) => {
         res.sendFile(path.join(__dirname, '..', 'app', 'build', 'index.html'));
       });
-    }
-
-    // Redirect other domains to www
-    if (this.options.forcedomain) {
-      const options = {
-        hostname: this.options.forcedomain,
-      };
-      if (!this.options.prod) {
-        options.port = port;
-      }
-      if (!this.options.https) {
-        options.protocol = 'https';
-      }
-      this.app.use(forceDomain(options));
     }
 
     if (this.options.https) {
