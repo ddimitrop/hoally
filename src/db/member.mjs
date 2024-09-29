@@ -2,6 +2,7 @@ import {
   AppError,
   handleErrors,
   INVITATION_TOKEN_INVALID,
+  NO_ADMIN_ROLE,
 } from '../../app/src/errors.mjs';
 import { getUser } from './hoauser.mjs';
 import { Community } from './community.mjs';
@@ -51,6 +52,19 @@ export class Member {
     const { sql, crypto } = this.connection;
     const id = this.getData().id;
     const hoaUserId = this.hoaUserId;
+
+    const [{ access }] = await sql`
+      select count(1) > 0 as access from member 
+          where community_id=(select community_id 
+                              from member where id=${id}) and 
+                hoauser_id=${hoaUserId} and
+                is_admin = true
+    `;
+
+    if (access === false) {
+      throw new AppError(NO_ADMIN_ROLE);
+    }
+
     const [data] = await sql`
       update member
         set address = ${address},
@@ -77,6 +91,19 @@ export class Member {
     const { sql } = this.connection;
     const id = this.getData().id;
     const hoaUserId = this.hoaUserId;
+
+    const [{ access }] = await sql`
+      select count(1) > 0 as access from member 
+          where community_id=(select community_id 
+                              from member where id=${id}) and 
+                hoauser_id=${hoaUserId} and
+                is_admin = true
+    `;
+
+    if (access === false) {
+      throw new AppError(NO_ADMIN_ROLE);
+    }
+
     await sql`
       delete from member
       where
@@ -115,6 +142,17 @@ export class Member {
     hoaUserId,
   ) {
     const { sql, crypto } = connection;
+
+    const [{ access }] = await sql`
+      select count(1) > 0 as access from member 
+          where community_id=${communityId} and 
+                hoauser_id=${hoaUserId} and
+                is_admin = true
+    `;
+
+    if (access === false) {
+      throw new AppError(NO_ADMIN_ROLE);
+    }
 
     const [data] = await sql`
       insert into member (
@@ -268,6 +306,21 @@ export class Member {
     }
     return data[0];
   }
+
+  static async rejectToken(connection, token) {
+    const { sql, crypto } = connection;
+    const hashedToken = crypto.hash(token);
+    const data = await sql`
+      update member
+      set encrypted_invitation_email = null
+      where hashed_token = ${hashedToken}
+
+      returning *`;
+    if (data.length !== 1) {
+      throw new AppError(INVITATION_TOKEN_INVALID);
+    }
+    return data[0];
+  }
 }
 
 export function memberApi(connection, app) {
@@ -354,6 +407,32 @@ export function memberApi(connection, app) {
       const member = await Member.get(connection, hoaUserId, id);
       await member.remove();
       res.json({ ok: true });
+    }),
+  );
+
+  app.post(
+    '/api/member/unassign',
+    handleErrors(async (req, res) => {
+      const { id, communityId } = req.body;
+      const hoaUserInst = await getUser(connection, req);
+      const hoaUserId = hoaUserInst.getData().id;
+      const currentMember = await Member.get(connection, hoaUserId, id);
+      const data = currentMember.getData();
+      await currentMember.remove();
+      const memberInst = await Member.create(
+        connection,
+        communityId,
+        data.address,
+        data.invitation_full_name,
+        data.invitation_email,
+        data.is_admin,
+        data.is_board_member,
+        data.is_moderator,
+        data.is_observer,
+        hoaUserId,
+      );
+      const member = memberInst.getData();
+      res.json({ member });
     }),
   );
 
@@ -476,6 +555,15 @@ export function memberApi(connection, app) {
       if (validateEmail) {
         await hoaUserInst.validateEmail();
       }
+      res.json({ ok: true });
+    }),
+  );
+
+  app.post(
+    '/api/member/reject',
+    handleErrors(async (req, res) => {
+      const { token } = req.body;
+      await Member.rejectToken(connection, token);
       res.json({ ok: true });
     }),
   );

@@ -41,12 +41,16 @@ const AddComment = ({
     comment.comment_id = commentId;
     const isNew = comment.id == null;
     return postData(`/api/comment/${topicId}`, comment, isNew ? 'POST' : 'PUT')
-      .then(({ comment }) => {
-        comment.comments = subComments;
-        comment.address = member.address;
-        comment.name = global.getCurrentUser().name;
-        done(comment);
-        clearEdits();
+      .then(({ appError, comment }) => {
+        if (appError) {
+          global.setAppError(appError);
+        } else {
+          comment.comments = subComments;
+          comment.address = member.address;
+          comment.name = global.getCurrentUser().name;
+          done(comment);
+          clearEdits();
+        }
       })
       .catch((e) => {
         global.setAppError(e.message);

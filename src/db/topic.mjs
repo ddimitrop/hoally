@@ -1,5 +1,5 @@
-import { handleErrors } from '../../app/src/errors.mjs';
 import { getUser } from './hoauser.mjs';
+import { AppError, handleErrors, NO_ACCESS } from '../../app/src/errors.mjs';
 
 export class Topic {
   constructor(connection, data, hoaUserId) {
@@ -17,13 +17,20 @@ export class Topic {
     const { sql } = this.connection;
     const id = this.getData().id;
     const hoaUserId = this.hoaUserId;
-    await sql`
+    const [topic] = await sql`
       delete from topic
       where
         id = ${id} and
         member_id in (
             select member_id from member 
-            where hoauser_id = ${hoaUserId})`;
+            where hoauser_id = ${hoaUserId})
+
+      returning *;            
+    `;
+
+    if (!topic) {
+      throw new AppError(NO_ACCESS);
+    }
   }
 
   async update(
@@ -38,7 +45,7 @@ export class Topic {
     const { sql } = this.connection;
     const id = this.getData().id;
     const hoaUserId = this.hoaUserId;
-    await sql`
+    const [topic] = await sql`
       update topic 
       set type = ${type},
       subject = ${subject},
@@ -55,6 +62,10 @@ export class Topic {
 
       returning *;
       `;
+
+    if (!topic) {
+      throw new AppError(NO_ACCESS);
+    }
 
     await sql`delete from vote_item where topic_id = ${id}`;
 
@@ -80,7 +91,7 @@ export class Topic {
     const id = this.getData().id;
     const hoaUserId = this.hoaUserId;
 
-    await sql`
+    const [topic] = await sql`
       update topic 
       set is_open = false,
           archive_timestamp = LOCALTIMESTAMP
@@ -94,6 +105,9 @@ export class Topic {
             where m.hoauser_id = ${hoaUserId} 
             and m.is_board_member = true)
       )`;
+    if (!topic) {
+      throw new AppError(NO_ACCESS);
+    }
   }
 
   async vote(voteItemId, isYes) {
@@ -107,6 +121,10 @@ export class Topic {
       and is_observer = false
       and hoauser_id = ${hoaUserId}
     `;
+
+    if (numvotes === 0) {
+      throw new AppError(NO_ACCESS);
+    }
 
     await sql`
       delete from vote where vote_item_id = ${voteItemId} 
@@ -152,6 +170,10 @@ export class Topic {
               )
 
               returning *`;
+    if (!comment) {
+      throw new AppError(NO_ACCESS);
+    }
+
     return comment;
   }
 
@@ -159,7 +181,7 @@ export class Topic {
     const { sql } = this.connection;
     const { id: topicId, community_id: communityId } = this.getData();
 
-    await sql`
+    const [comment] = await sql`
       delete from comment
       where
         id = ${id} and
@@ -167,7 +189,13 @@ export class Topic {
         and member_id in (
           select id from member
           where community_id = ${communityId}
-          and hoauser_id = ${this.hoaUserId})`;
+          and hoauser_id = ${this.hoaUserId})
+          
+      returning *`;
+
+    if (!comment) {
+      throw new AppError(NO_ACCESS);
+    }
   }
 
   async changeComment(id, discussion) {
@@ -188,6 +216,10 @@ export class Topic {
 
       returning *
       `;
+
+    if (!comment) {
+      throw new AppError(NO_ACCESS);
+    }
 
     return comment;
   }
@@ -228,6 +260,10 @@ export class Topic {
           returning *
           `;
 
+    if (!topicId) {
+      throw new AppError(NO_ACCESS);
+    }
+
     for (const { description } of propositions) {
       await sql`
         insert into vote_item (
@@ -249,7 +285,7 @@ export class Topic {
     const topics = await sql`
       select t.*, m.address, h.encrypted_name as name
       from topic t 
-        join member m on m.id = t.member_id
+        left join member m on m.id = t.member_id
         left join hoauser h on m.hoauser_id = h.id
         where t.community_id = (
           select max(community_id) from member 
@@ -314,11 +350,14 @@ export class Topic {
     const comments = await sql`
         select c.*, m.address, h.encrypted_name as name
         from comment c
-        join member m on m.id = c.member_id
+        left join member m on m.id = c.member_id
         left join hoauser h on m.hoauser_id = h.id
         where c.topic_id in (
             select id from topic 
-            where community_id=${communityId})
+            where community_id=(
+              select max(community_id) from member 
+              where community_id = ${communityId} 
+                and hoauser_id = ${hoaUserId}))
             order by id asc`;
 
     const commentsById = {};
@@ -345,11 +384,15 @@ export class Topic {
     const [topic] = await sql`
     select t.*, m.address, h.encrypted_name as name
       from topic t 
-        join member m on m.id = t.member_id
+        left join member m on m.id = t.member_id
         left join hoauser h on m.hoauser_id = h.id
         where t.id = ${id} and t.community_id in (
           select community_id from member 
           where hoauser_id = ${hoaUserId})`;
+
+    if (!topic) {
+      throw new AppError(NO_ACCESS);
+    }
 
     const communityId = topic.community_id;
     topic.propositions = [];

@@ -21,7 +21,7 @@ import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import { Global } from './Global.js';
-import { useLoaderData } from 'react-router-dom';
+import { useLoaderData, useNavigate } from 'react-router-dom';
 import { useState, useContext, Fragment, dangerouslySetInnerHTML } from 'react';
 import { getData, postData, longAgo } from './json-utils.js';
 import AddTopic from './AddTopic.js';
@@ -35,10 +35,12 @@ import CommentsList from './CommentsList';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import './Markdown.css';
+import { NO_AUTHENTICATION_COOKIE } from './errors.mjs';
 
 const TopicsList = () => {
   const global = useContext(Global);
   const purify = DOMPurify(window);
+  const navigate = useNavigate();
   const theme = useTheme();
   let [topicAdd, setTopicAdd] = useState(false);
   let [topicEdit, setTopicEdit] = useState(null);
@@ -52,6 +54,7 @@ const TopicsList = () => {
   let [voteCount, setVoteCount] = useState(0);
   const [commentCancel, setCommentCancel] = useState(null);
   const [expanded, setExpanded] = useState([]);
+  const [hasRedirect, setHasRedirect] = useState(false);
 
   const isHiddenIntro = () => {
     return Date.now() < Number(localStorage.getItem('hiddenIntro'));
@@ -101,34 +104,38 @@ const TopicsList = () => {
   const editDone = (topic, isNew) => {
     if (topic) {
       if (isNew) {
-        topicsList.push(topic);
+        topics.push(topic);
       }
     }
     clearEdits();
   };
 
   const data = useLoaderData();
-  const { error } = data;
-  if (error) {
-    global.setAppError(error);
-  }
 
-  const community = data.community || {};
-  const { error: communityError } = community;
-  if (communityError) {
-    global.setAppError(communityError);
+  let { community, member, topics } = data;
+  let errorMessage = data.error;
+  if (!community) community = {};
+  if (!member) member = {};
+  if (!topics) topics = [];
+  for (const part of [community, member, topics]) {
+    const { error, appError } = part;
+    errorMessage ||= error || appError;
   }
-
-  const member = data.member || {};
-  const { error: memberError } = member;
-  if (memberError) {
-    global.setAppError(memberError);
-  }
-
-  let topicsList = data.topics || [];
-  const { error: topicsError } = topicsList;
-  if (topicsError) {
-    global.setAppError(topicsError);
+  if (errorMessage) {
+    if (errorMessage != NO_AUTHENTICATION_COOKIE) {
+      setTimeout(() => {
+        if (!hasRedirect) {
+          setHasRedirect(true);
+          global.setAppError(errorMessage);
+          global.customErrorClose(() => {
+            navigate('/community');
+          });
+        }
+      }, 0);
+    }
+    community = {};
+    member = {};
+    topics = [];
   }
 
   const topicTags = (topic) =>
@@ -143,26 +150,26 @@ const TopicsList = () => {
   const confirmDelete = (i) => {
     checkChange(() => {
       // We show the list in reverse.
-      setDeleteIndex(topicsList.length - 1 - i);
+      setDeleteIndex(topics.length - 1 - i);
       deleteDialog.open();
     });
   };
 
   const deleteTopic = () => {
-    topicsList.splice(deleteIndex, 1);
+    topics.splice(deleteIndex, 1);
     setDeleteIndex(null);
   };
 
   const confirmArchive = (i) => {
     checkChange(() => {
       // We show the list in reverse.
-      setArchiveIndex(topicsList.length - 1 - i);
+      setArchiveIndex(topics.length - 1 - i);
       archiveDialog.open();
     });
   };
 
   const archiveTopic = () => {
-    topicsList.splice(archiveIndex, 1);
+    topics.splice(archiveIndex, 1);
     setArchiveIndex(null);
   };
 
@@ -178,22 +185,26 @@ const TopicsList = () => {
       postData(`/api/topic/${topic.id}/vote/${proposition.id}`, {
         vote,
       })
-        .then(({ votes }) => {
-          votes = Number(votes);
-          proposition.votes_up = Number(proposition.votes_up);
-          proposition.votes_down = Number(proposition.votes_down);
-          if (proposition.vote === true) {
-            proposition.votes_up -= votes;
-          } else if (proposition.vote === false) {
-            proposition.votes_down -= votes;
+        .then(({ appError, votes }) => {
+          if (appError) {
+            global.setAppError(appError);
+          } else {
+            votes = Number(votes);
+            proposition.votes_up = Number(proposition.votes_up);
+            proposition.votes_down = Number(proposition.votes_down);
+            if (proposition.vote === true) {
+              proposition.votes_up -= votes;
+            } else if (proposition.vote === false) {
+              proposition.votes_down -= votes;
+            }
+            proposition.vote = vote;
+            if (vote === true) {
+              proposition.votes_up += votes;
+            } else if (vote === false) {
+              proposition.votes_down += votes;
+            }
+            setVoteCount(voteCount + 1);
           }
-          proposition.vote = vote;
-          if (vote === true) {
-            proposition.votes_up += votes;
-          } else if (vote === false) {
-            proposition.votes_down += votes;
-          }
-          setVoteCount(voteCount + 1);
         })
         .catch(({ message }) => {
           global.setAppError(message);
@@ -247,7 +258,7 @@ const TopicsList = () => {
 
   return (
     <Stack>
-      {!hiddenIntro ? (
+      {!hiddenIntro && community.intro ? (
         <Alert
           sx={{ marginBottom: '16px', maxHeight: '200px' }}
           icon={<HolidayVillageOutlinedIcon fontSize="inherit" />}
@@ -280,10 +291,14 @@ const TopicsList = () => {
         ) : (
           <div />
         )}
-        <Fab color="primary" variant="extended" onClick={postTopic}>
-          <PostAddIcon sx={{ mr: 1 }} />
-          <Box sx={{ whiteSpace: 'nowrap' }}>New post</Box>
-        </Fab>
+        {community.id ? (
+          <Fab color="primary" variant="extended" onClick={postTopic}>
+            <PostAddIcon sx={{ mr: 1 }} />
+            <Box sx={{ whiteSpace: 'nowrap' }}>New post</Box>
+          </Fab>
+        ) : (
+          ''
+        )}
       </Box>
       {topicAdd ? (
         <Fragment>
@@ -299,7 +314,7 @@ const TopicsList = () => {
       ) : (
         ''
       )}
-      {!topicsList.length && !topicAdd ? (
+      {!topics.length && !topicAdd ? (
         <Box
           sx={{
             paddingTop: '64px',
@@ -322,7 +337,7 @@ const TopicsList = () => {
           marginTop: '16px',
         }}
       >
-        {[...topicsList].reverse().map((topic, i) =>
+        {[...topics].reverse().map((topic, i) =>
           topicEdit === i ? (
             <ListItem key={member.id} divider sx={{ paddingBottom: '16px' }}>
               <AddTopic
@@ -618,7 +633,7 @@ const TopicsList = () => {
         onDelete={() => {
           deleteTopic();
         }}
-        deleteApiPath={`/api/topic/${topicsList[deleteIndex]?.id}`}
+        deleteApiPath={`/api/topic/${topics[deleteIndex]?.id}`}
         deleteTitle="Delete topic ?"
         deleteText="Deleting the topic can't be undone."
       />
@@ -627,7 +642,7 @@ const TopicsList = () => {
         onDelete={() => {
           archiveTopic();
         }}
-        deleteApiPath={`/api/topic/${topicsList[archiveIndex]?.id}/archive`}
+        deleteApiPath={`/api/topic/${topics[archiveIndex]?.id}/archive`}
         deleteMethod="POST"
         deleteTitle="Archive topic ?"
         deleteText="The topic will be transfered to the archived topics and votes or comments will be frozen."

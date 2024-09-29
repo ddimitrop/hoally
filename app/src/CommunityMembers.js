@@ -230,7 +230,7 @@ const CommunityMembers = ({ stepper, community, members }) => {
         }}
         deleteApiPath={`/api/member/${members[deleteIndex]?.id}`}
         deleteTitle="Delete member ?"
-        deleteText="Deleting this community member would make its posts and votes anonymous."
+        deleteText="Deleting this community member would make its posts and comments anonymous."
       />
     </Fragment>
   );
