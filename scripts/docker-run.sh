@@ -5,7 +5,7 @@ environment=$2
 
 if [ ! $version ]
 then 
-  version=1.04
+  version=1.06
 fi
 
 if [ ! $environment ]
