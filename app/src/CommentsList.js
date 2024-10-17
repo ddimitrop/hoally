@@ -12,6 +12,7 @@ import { flagState } from './state-utils.js';
 import { longAgo } from './json-utils.js';
 import AddComment from './AddComment.js';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
+import Attachements from './Attachments.js';
 
 const CommentsList = ({
   setCommentCancel,
@@ -162,6 +163,14 @@ const CommentsList = ({
                           >
                             <EditOutlinedIcon fontSize="xsmall" />
                           </IconButton>
+                        )}
+                        {comment.images.length ? (
+                          <Attachements
+                            prefix={`topic/${topicId}`}
+                            images={comment.images}
+                          />
+                        ) : (
+                          ''
                         )}
                       </Fragment>
                     ) : (

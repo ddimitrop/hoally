@@ -40,6 +40,25 @@ export async function postData(url, data, method = 'POST') {
   return responseData;
 }
 
+export async function uploadData(url, data) {
+  const response = await fetch(url, {
+    method: 'POST',
+    referrerPolicy: 'no-referrer',
+    mode: 'cors',
+    cache: 'no-store',
+    body: data,
+  });
+  if (!response.ok) {
+    throw Error(`${response.statusText}`);
+  }
+  const responseData = await response.json();
+  const { error } = responseData;
+  if (error && !isAppError(error)) {
+    throw Error(`${error}`);
+  }
+  return responseData;
+}
+
 export function formData(event) {
   return getFormData(event.currentTarget);
 }

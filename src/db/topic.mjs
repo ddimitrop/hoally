@@ -1,5 +1,6 @@
 import { getUser } from './hoauser.mjs';
 import { AppError, handleErrors, NO_ACCESS } from '../../app/src/errors.mjs';
+import multer from 'multer';
 
 export class Topic {
   constructor(connection, data, hoaUserId) {
@@ -41,16 +42,20 @@ export class Topic {
     description,
     propositions,
     tags,
+    images,
   ) {
-    const { sql } = this.connection;
+    const { sql, imageStore } = this.connection;
     const id = this.getData().id;
     const hoaUserId = this.hoaUserId;
+    const finalImages = await imageStore.moveToFinal('topic', id, images);
+
     const [topic] = await sql`
       update topic 
       set type = ${type},
       subject = ${subject},
       description = ${description},
       tags = ${tags},
+      images = ${finalImages},
       last_update_timestamp = LOCALTIMESTAMP
       where
           id = ${id} and
@@ -69,14 +74,17 @@ export class Topic {
 
     await sql`delete from vote_item where topic_id = ${id}`;
 
-    for (const { description } of propositions) {
+    for (const { description, images } of propositions) {
+      const propImages = await imageStore.moveToFinal('topic', id, images);
       await sql`
           insert into vote_item (
             topic_id,
-            description
+            description,
+            images
           ) values (
             ${id},
-            ${description}
+            ${description},
+            ${propImages}
           )
     
           returning *
@@ -104,7 +112,9 @@ export class Topic {
             inner join member m on (c.id = m.community_id) 
             where m.hoauser_id = ${hoaUserId} 
             and m.is_board_member = true)
-      )`;
+      )
+
+      returning *`;
     if (!topic) {
       throw new AppError(NO_ACCESS);
     }
@@ -146,23 +156,27 @@ export class Topic {
     return numvotes;
   }
 
-  async comment(voteItemId, commentId, discussion) {
-    const { sql } = this.connection;
+  async comment(voteItemId, commentId, discussion, images) {
+    const { sql, imageStore } = this.connection;
 
     const { id: topicId, community_id: communityId } = this.getData();
     const hoaUserId = this.hoaUserId;
+
+    const finalImages = await imageStore.moveToFinal('topic', topicId, images);
 
     const [comment] = await sql`insert into comment(
                 topic_id,
                 vote_item_id,
                 comment_id,
                 discussion,
+                images,
                 member_id
               ) values (
                 ${topicId},
                 ${voteItemId},
                 ${commentId},
                 ${discussion},
+                ${finalImages},
                 (select min(id) 
                  from member
                  where community_id = ${communityId} and
@@ -198,13 +212,16 @@ export class Topic {
     }
   }
 
-  async changeComment(id, discussion) {
-    const { sql } = this.connection;
+  async changeComment(id, discussion, images) {
+    const { sql, imageStore } = this.connection;
     const { id: topicId, community_id: communityId } = this.getData();
+
+    const finalImages = await imageStore.moveToFinal('topic', topicId, images);
 
     const [comment] = await sql`
       update comment
       set discussion = ${discussion},
+          images = ${finalImages},
           last_update_timestamp = LOCALTIMESTAMP
       where
         id = ${id} and
@@ -233,9 +250,12 @@ export class Topic {
     description,
     propositions,
     tags,
+    images,
     hoaUserId,
   ) {
-    const { sql } = connection;
+    const { sql, imageStore } = connection;
+
+    const finalImages = imageStore.finalNames(images);
 
     const [{ id: topicId }] = await sql`
           insert into topic (
@@ -244,7 +264,8 @@ export class Topic {
             type,
             subject,
             description,
-            tags 
+            tags,
+            images
           ) values (
             ${communityId},
             (select min(m.id) from member m
@@ -254,7 +275,8 @@ export class Topic {
             ${type},
             ${subject},
             ${description},
-            ${tags}
+            ${tags},
+            ${finalImages}
           )
     
           returning *
@@ -263,15 +285,19 @@ export class Topic {
     if (!topicId) {
       throw new AppError(NO_ACCESS);
     }
+    await imageStore.moveToFinal('topic', topicId, images);
 
-    for (const { description } of propositions) {
+    for (const { description, images } of propositions) {
+      const propImages = await imageStore.moveToFinal('topic', topicId, images);
       await sql`
         insert into vote_item (
           topic_id,
-          description
+          description,
+          images
         ) values (
           ${topicId},
-          ${description}
+          ${description},
+          ${propImages}
         )
   
         returning *
@@ -318,6 +344,7 @@ export class Topic {
       proposition.votes_down = 0;
       proposition.vote = null;
       proposition.comments = [];
+      if (!proposition.images) proposition.images = [];
       topicsById[proposition.topic_id].propositions.push(proposition);
       propositionsById[proposition.id] = proposition;
     });
@@ -368,12 +395,12 @@ export class Topic {
       let subComments;
       if (comment.vote_item_id) {
         const proposition = propositionsById[comment.vote_item_id];
-        subComments = proposition.comments;
+        subComments = proposition?.comments;
       } else {
         const prevComment = commentsById[comment.comment_id];
-        subComments = prevComment.comments;
+        subComments = prevComment?.comments;
       }
-      subComments.push(comment);
+      subComments?.push(comment);
     });
 
     return topics;
@@ -409,6 +436,7 @@ export class Topic {
       proposition.votes_down = 0;
       proposition.vote = null;
       proposition.comments = [];
+      if (!proposition.images) proposition.images = [];
       propositionsById[proposition.id] = proposition;
     });
 
@@ -461,6 +489,19 @@ export class Topic {
 }
 
 export function topicApi(connection, app) {
+  const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, connection.imageStore.tempPath());
+    },
+    filename: function (req, file, cb) {
+      const extension = (
+        file.originalname.match(/\.[^.]*$/)?.[0] || ''
+      ).toLowerCase();
+      cb(null, 't_' + connection.crypto.uuid() + extension);
+    },
+  });
+  const upload = multer({ storage });
+
   app.post(
     '/api/topic/:communityId',
     handleErrors(async (req, res) => {
@@ -473,6 +514,7 @@ export function topicApi(connection, app) {
         subject,
         description,
         propositions,
+        images,
         tags,
       } = req.body;
       const topicId = await Topic.create(
@@ -484,6 +526,7 @@ export function topicApi(connection, app) {
         description,
         propositions,
         tags,
+        images,
         hoaUserId,
       );
       const topicInst = await Topic.get(connection, hoaUserId, topicId);
@@ -517,6 +560,7 @@ export function topicApi(connection, app) {
         description,
         propositions,
         tags,
+        images,
       } = req.body;
       const topicInst = await Topic.get(connection, hoaUserId, id);
 
@@ -528,6 +572,7 @@ export function topicApi(connection, app) {
         description,
         propositions,
         tags,
+        images,
       );
       const topic = topicInst.getData();
       res.json({ topic });
@@ -566,7 +611,7 @@ export function topicApi(connection, app) {
       const hoaUserInst = await getUser(connection, req);
       const hoaUserId = hoaUserInst.getData().id;
       const topicInst = await Topic.get(connection, hoaUserId, topicId);
-      topicInst.archive();
+      await topicInst.archive();
       res.json({ ok: true });
     }),
   );
@@ -579,6 +624,7 @@ export function topicApi(connection, app) {
         vote_item_id: voteItemId,
         comment_id: commentId,
         discussion,
+        images,
       } = req.body;
       const hoaUserInst = await getUser(connection, req);
       const hoaUserId = hoaUserInst.getData().id;
@@ -587,6 +633,7 @@ export function topicApi(connection, app) {
         voteItemId || null,
         commentId || null,
         discussion,
+        images,
       );
       res.json({ comment });
     }),
@@ -596,11 +643,11 @@ export function topicApi(connection, app) {
     '/api/comment/:topicId',
     handleErrors(async (req, res) => {
       const { topicId } = req.params;
-      const { id, discussion } = req.body;
+      const { id, discussion, images } = req.body;
       const hoaUserInst = await getUser(connection, req);
       const hoaUserId = hoaUserInst.getData().id;
       const topicInst = await Topic.get(connection, hoaUserId, topicId);
-      const comment = await topicInst.changeComment(id, discussion);
+      const comment = await topicInst.changeComment(id, discussion, images);
       res.json({ comment });
     }),
   );
@@ -613,6 +660,30 @@ export function topicApi(connection, app) {
       const hoaUserId = hoaUserInst.getData().id;
       const topicInst = await Topic.get(connection, hoaUserId, topicId);
       await topicInst.removeComment(id);
+      res.json({ ok: true });
+    }),
+  );
+
+  app.post(
+    '/api/upload/topic',
+    upload.single('file'),
+    handleErrors(async (req, res) => {
+      const { imageStore } = connection;
+      setTimeout(() => {
+        imageStore.cleanUp(2);
+      }, 0);
+      const filename = req.file.filename;
+      await imageStore.thumbnail(filename);
+      res.json({ filename });
+    }),
+  );
+
+  app.post(
+    '/api/upload/clear',
+    handleErrors(async (req, res) => {
+      const { imageStore } = connection;
+      const { filename } = req.body;
+      await imageStore.removeTemp(filename);
       res.json({ ok: true });
     }),
   );

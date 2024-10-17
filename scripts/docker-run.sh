@@ -17,6 +17,7 @@ LOCAL_RUN=/home/hoa/hoally-run/
 RUN=/usr/lib/hoally/run/
 SECRETS=${RUN}secrets/
 DATA=${RUN}/dev/data/
+IMAGES=${RUN}/dev/images/
 
 docker stop hoally-$environment 2>/dev/null
 docker run --rm -t \

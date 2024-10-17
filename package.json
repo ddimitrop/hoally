@@ -6,7 +6,7 @@
   "scripts": {
     "prestart": "cd app; npm run build",
     "start": "node src/hoally.mjs",
-    "start-dev": "nodemon src/hoally.mjs -- --proxy 'http://lacroix.local:3000' --port 8081 --secrets '/home/hoa/hoally-run/secrets' --https --cert '/etc/letsencrypt/live/lacroix.mynetgear.com/' --forcedomain lacroix.mynetgear.com",
+    "start-dev": "nodemon src/hoally.mjs -- --proxy 'http://lacroix.local:3000' --port 8081 --secrets '/home/hoa/hoally-run/secrets' --https --cert '/etc/letsencrypt/live/lacroix.mynetgear.com/' --forcedomain lacroix.mynetgear.com --images '/home/hoa/hoally-run/images'",
     "test": "npx jasmine --config=jasmine.json",
     "integration": "npx jasmine --config=jasmine-integration.json",
     "container": "bash scripts/docker-build.sh",
@@ -40,9 +40,11 @@
     "https": "^1.0.0",
     "jsdom": "^24.1.1",
     "marked": "^14.0.0",
+    "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.14",
     "postgres": "^3.4.4",
-    "qrcode": "^1.5.4"
+    "qrcode": "^1.5.4",
+    "sharp": "^0.33.5"
   },
   "devDependencies": {
     "eslint": "^9.5.0",
