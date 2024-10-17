@@ -5,7 +5,7 @@
 RUN=$HOME/hoally-run/
 DATA=${RUN}data/
 PG_DATA=${DATA}pgdata/
-SECRETS=$HOME/hoally-run//secrets/
+SECRETS=$HOME/hoally-run/secrets/
 
 D_POSTGRESS=/var/lib/postgresql/
 D_SECRETS=${D_POSTGRESS}secrets/

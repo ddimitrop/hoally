@@ -109,8 +109,7 @@ CREATE TABLE topic (
     subject varchar(500) NOT NULL,
     description text,
     tags tag_enum[10],
-    images varchar(100)[5],
-    documents varchar(100)[5],
+    images varchar(100)[8],
     -- When topics are resolved, they are getting archived.
     is_open boolean NOT NULL DEFAULT true,
     creation_timestamp TIMESTAMP WITH TIME ZONE DEFAULT LOCALTIMESTAMP,
@@ -126,8 +125,7 @@ CREATE TABLE vote_item (
     id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     topic_id INTEGER NOT NULL REFERENCES topic(id) ON DELETE CASCADE,
     description text,
-    images varchar(100)[5],
-    documents varchar(100)[5]
+    images varchar(100)[8]
 );
 
 -- Votes of members on a vote_item
@@ -151,8 +149,7 @@ CREATE TABLE comment (
     -- the parent comment that this comment is reply to.
     comment_id INTEGER REFERENCES comment(id) ON DELETE CASCADE,
     discussion text,
-    images varchar(100)[5],
-    documents varchar(100)[5],
+    images varchar(100)[8],
     creation_timestamp TIMESTAMP WITH TIME ZONE DEFAULT LOCALTIMESTAMP,
     last_update_timestamp TIMESTAMP WITH TIME ZONE,
     CONSTRAINT single_parent CHECK (

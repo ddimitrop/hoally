@@ -2,6 +2,7 @@ import express from 'express';
 import fs from 'fs';
 import { Command, InvalidArgumentError } from 'commander';
 import { Crypto } from './utils/crypto.mjs';
+import { ImageStore } from './utils/imagestore.mjs';
 import postgres from 'postgres';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -22,6 +23,7 @@ const __dirname = path.dirname(__filename);
 export const DEV_PORT = 8080;
 export const PROD_HTTP_PORT = 80;
 export const PROD_HTTPS_PORT = 443;
+export const DEFAULT_IMAGES_PATH = '/usr/lib/hoally/run/images';
 
 export class Server {
   constructor(options, app, express, connection, api) {
@@ -39,6 +41,11 @@ export class Server {
     // Provide access to the react's app static files.
     this.app.use(
       this.express.static(path.join(__dirname, '..', 'app', 'build')),
+    );
+
+    this.app.use(
+      '/images',
+      this.express.static(this.options.images || DEFAULT_IMAGES_PATH),
     );
 
     this.app.use(express.json());
@@ -141,6 +148,7 @@ export function parseOptions(program, args) {
     .option('--prod', 'Prod environment (default port 80 or 443 for https)')
     .option('--cert <string>', 'Path to the https cetificate directory')
     .option('--secrets <string>', 'Path to the secrets directory')
+    .option('--images <string>', 'Path to the images directory')
     .option('--forcedomain <string>', 'Redirect request to domain');
   program.parse(args);
 
@@ -150,6 +158,7 @@ export function parseOptions(program, args) {
 export function prepareConnection(options) {
   const SECRETS_DIRECTORY = options.secrets || '/usr/lib/hoally/run/secrets';
   const environment = options.prod ? 'prod' : 'dev';
+  const imagesPath = options.images || DEFAULT_IMAGES_PATH;
 
   const cryptoSecrets = fs.readFileSync(
     `${SECRETS_DIRECTORY}/hoa-crypto`,
@@ -213,7 +222,9 @@ export function prepareConnection(options) {
     });
   };
 
-  return { crypto, sql, sendMail };
+  const imageStore = new ImageStore(imagesPath);
+
+  return { crypto, sql, sendMail, imageStore };
 }
 
 const api = {

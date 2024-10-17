@@ -4,7 +4,7 @@ import Box from '@mui/material/Box';
 import Fab from '@mui/material/Fab';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import PostAddIcon from '@mui/icons-material/PostAdd';
-import AnnouncementIcon from '@mui/icons-material/Announcement';
+import CampaignIcon from '@mui/icons-material/Campaign';
 import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
 import ThumbDownOffAltIcon from '@mui/icons-material/ThumbDownOffAlt';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -32,6 +32,7 @@ import DeleteConfirmDialog from './DeleteConfirmDialog';
 import { flagState } from './state-utils.js';
 import { useTheme } from '@mui/material/styles';
 import CommentsList from './CommentsList';
+import Attachements from './Attachments.js';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import './Markdown.css';
@@ -220,7 +221,7 @@ const TopicsList = () => {
   };
 
   const hideIntro = () => {
-    hideIntroFormSecs(60 * 60 * 24);
+    hideIntroFormSecs(60 * 60 * 24 * 30);
     setHiddenIntro(true);
   };
 
@@ -416,7 +417,7 @@ const TopicsList = () => {
               <Stack
                 sx={{
                   width: '100%',
-                  maxHeight: expanded[i] ? 'auto' : '140px',
+                  maxHeight: expanded[i] ? 'auto' : '180px',
                   minHeight: '80px',
                   overflowY: 'scroll',
                 }}
@@ -435,7 +436,7 @@ const TopicsList = () => {
                     {topic.type === 'proposition' ? (
                       <BallotIcon fontSize="large" />
                     ) : (
-                      <AnnouncementIcon fontSize="large" />
+                      <CampaignIcon fontSize="large" />
                     )}
                   </ListItemIcon>
                   <ListItemText
@@ -467,6 +468,14 @@ const TopicsList = () => {
                       >
                         <Box sx={{ fontSize: '14px', flexGrow: '1' }}>
                           {topic.description}
+                          {topic.images.length ? (
+                            <Attachements
+                              prefix={`topic/${topic.id}`}
+                              images={topic.images}
+                            />
+                          ) : (
+                            ''
+                          )}
                           {topic.description && topic.tags.length ? <br /> : ''}
                           {topicTags(topic)}
                           {topic.type === 'announcement' ? (
@@ -543,6 +552,14 @@ const TopicsList = () => {
                         >
                           <Box sx={{ flexGrow: '1' }}>
                             <b>Proposition:</b> {proposition.description}
+                            {proposition.images.length ? (
+                              <Attachements
+                                prefix={`topic/${topic.id}`}
+                                images={proposition.images}
+                              />
+                            ) : (
+                              ''
+                            )}
                             <CommentsList
                               checkChange={checkChange}
                               setChanged={setTopicChanged}
