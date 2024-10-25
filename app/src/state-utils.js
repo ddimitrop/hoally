@@ -10,6 +10,36 @@ export function flagState(state) {
   };
 }
 
+/** A simple wrapper for showing a "cancel" dialogs when changes would be lost. */
+export function changeProtect(state, confirmState, activeState, dialog) {
+  const [hasChanged, setChanged] = state;
+  const [confirm, setConfirm] = confirmState;
+  const [active, setActive] = activeState;
+  return {
+    hasChanged: () => hasChanged,
+    setChanged: (value) => setChanged(value),
+    wasChanged: () => setChanged(true),
+    onConfirm: () => confirm?.callback?.(),
+    checkChange: (callback, activeCallback) => {
+      const oldActive = active?.callback;
+      setActive({ callback: activeCallback });
+      const doConfirm = () => {
+        setChanged(false);
+        setConfirm();
+        dialog.close();
+        oldActive?.();
+        callback();
+      };
+      if (hasChanged) {
+        setConfirm({ callback: doConfirm });
+        dialog.open();
+      } else {
+        doConfirm();
+      }
+    },
+  };
+}
+
 /** A simple wrapper for a value. */
 export function valueState(state) {
   const [value, setValue] = state;

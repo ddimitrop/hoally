@@ -4,8 +4,9 @@ import ClearIcon from '@mui/icons-material/Clear';
 import { flagState } from './state-utils.js';
 import ImageDialog, { imagePath } from './ImageDialog.js';
 
-const Attachements = ({ prefix, images, removeImage }) => {
-  const size = '64px';
+const Attachements = ({ prefix, images, removeImage, small = false }) => {
+  const size = small ? '64px' : '256px';
+  const sizePrefix = small ? 's_' : 'm_';
   const gap = '8px';
   const dialog = flagState(useState(false));
   const [currentImage, setCurrentImage] = useState(0);
@@ -30,8 +31,8 @@ const Attachements = ({ prefix, images, removeImage }) => {
             key={image}
             role="button"
             style={{
-              marginTop: '12px',
-              backgroundImage: `url("${imagePath(prefix, image, true)}")`,
+              margin: '8px 0',
+              backgroundImage: `url("${imagePath(prefix, image, sizePrefix)}")`,
               backgroundPosition: 'center',
               backgroundSize: 'cover',
               backgroundRepeat: 'no-repeat',
@@ -58,7 +59,10 @@ const Attachements = ({ prefix, images, removeImage }) => {
                 ]}
                 aria-label="delete"
                 color="error"
-                onClick={() => removeImage(i)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  removeImage(i);
+                }}
                 size="small"
               >
                 <ClearIcon fontSize="small" />

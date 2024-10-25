@@ -546,6 +546,18 @@ export function topicApi(connection, app) {
     }),
   );
 
+  app.get(
+    '/api/topic/:communityId/:topicId',
+    handleErrors(async (req, res) => {
+      const { topicId } = req.params;
+      const hoaUserInst = await getUser(connection, req);
+      const hoaUserId = hoaUserInst.getData().id;
+      const topicInst = await Topic.get(connection, hoaUserId, topicId);
+      const topic = topicInst.getData();
+      res.json(topic);
+    }),
+  );
+
   app.put(
     '/api/topic/:communityId',
     handleErrors(async (req, res) => {
@@ -674,6 +686,7 @@ export function topicApi(connection, app) {
       }, 0);
       const filename = req.file.filename;
       await imageStore.thumbnail(filename);
+      await imageStore.smaller(filename);
       res.json({ filename });
     }),
   );

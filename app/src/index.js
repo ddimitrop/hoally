@@ -9,6 +9,8 @@ import RecoverAccount from './RecoverAccount';
 import CommunityList, { communitiesLoader } from './CommunityList';
 import CreateCommunity, { communityLoader } from './CreateCommunity';
 import TopicsList, { topicsLoader } from './TopicsList';
+import EditTopic, { editTopicLoader } from './EditTopic';
+import ViewTopic, { viewTopicLoader } from './ViewTopic';
 import InvitationAccept, { invitationLoader } from './InvitationAccept';
 import InvitationReject, { rejectLoader } from './InvitationReject';
 import GlobalContext from './Global';
@@ -83,6 +85,24 @@ const router = createBrowserRouter([
           </RequireAuth>
         ),
         loader: topicsLoader,
+      },
+      {
+        path: 'topic/:communityId/edit/:topicId/',
+        element: (
+          <RequireAuth>
+            <EditTopic />
+          </RequireAuth>
+        ),
+        loader: editTopicLoader,
+      },
+      {
+        path: 'topic/:communityId/view/:topicId/',
+        element: (
+          <RequireAuth>
+            <ViewTopic />
+          </RequireAuth>
+        ),
+        loader: viewTopicLoader,
       },
     ],
   },

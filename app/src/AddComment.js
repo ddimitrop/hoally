@@ -9,8 +9,8 @@ import UploadButton, { clearImage } from './UploadButton.js';
 import Attachements from './Attachments.js';
 
 const AddComment = ({
+  protect,
   setEditComment,
-  setChanged,
   comment,
   done,
   topicId,
@@ -25,12 +25,12 @@ const AddComment = ({
 
   const clearEdits = () => {
     setEditComment(false);
-    setChanged(false);
+    protect.setChanged(false);
   };
 
   const checkWasChanged = () => {
     const wasChanged = hasModifications(comment, getFormData());
-    setChanged(wasChanged);
+    protect.setChanged(wasChanged);
   };
 
   const getFormData = () => {
@@ -47,6 +47,8 @@ const AddComment = ({
     images.splice(i, 1);
     setImages([...images]);
   };
+
+  const isNewComment = () => !comment.id;
 
   const postComment = () => {
     const subComments = comment?.comments || [];
@@ -78,6 +80,7 @@ const AddComment = ({
   return (
     <Fragment>
       <Stack
+        sx={{ marginTop: '12px' }}
         direction="row"
         spacing={2}
         alignItems="center"
@@ -103,26 +106,31 @@ const AddComment = ({
         ) : (
           ''
         )}
-        <Button
-          size="small"
-          color="error"
-          onClick={() => {
-            confirmDelete();
-          }}
-        >
-          Delete
-        </Button>
+        {!isNewComment() ? (
+          <Button
+            size="small"
+            color="error"
+            onClick={() => {
+              confirmDelete();
+            }}
+          >
+            Delete
+          </Button>
+        ) : (
+          ''
+        )}
         <Button size="small" variant="outlined" onClick={cancel}>
           Cancel
         </Button>
         <Button size="small" variant="contained" type="submit">
-          Post
+          {isNewComment() ? 'Post' : 'Change'}
         </Button>
       </Stack>
       <Attachements
         prefix={`topic/${topicId}`}
         images={images}
         removeImage={removeImage}
+        small={true}
       />
     </Fragment>
   );

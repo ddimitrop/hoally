@@ -48,6 +48,10 @@ export class ImageStore {
                 this.imagesTmp + '/s_' + fileName,
                 path + '/s_' + final,
               );
+              await rename(
+                this.imagesTmp + '/m_' + fileName,
+                path + '/m_' + final,
+              );
             }
             result.push(final);
           } catch (err) {
@@ -68,10 +72,19 @@ export class ImageStore {
       await rm(this.imagesTmp + '/' + filename);
       if (!filename.endsWith('.pdf')) {
         await rm(this.imagesTmp + '/s_' + filename);
+        await rm(this.imagesTmp + '/m_' + filename);
       }
     } catch (err) {
       console.error(err);
     }
+  }
+
+  async smaller(filename) {
+    if (filename.endsWith('.pdf')) return;
+    const imagePath = this.imagesTmp + '/' + filename;
+    return sharp(imagePath)
+      .resize(256, 256)
+      .toFile(this.imagesTmp + '/m_' + filename);
   }
 
   async thumbnail(filename) {
