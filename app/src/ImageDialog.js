@@ -5,6 +5,7 @@ import IconButton from '@mui/material/IconButton';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import pdf from './pdf.png';
+import pdf_m from './pdf_m.png';
 
 const ImageDialog = ({ prefix, control, images, setCurrent, current }) => {
   function close() {
@@ -30,7 +31,14 @@ const ImageDialog = ({ prefix, control, images, setCurrent, current }) => {
       fullWidth={true}
       maxWidth={false}
     >
-      <DialogContent style={{ position: 'relative' }}>
+      <DialogContent
+        style={{
+          position: 'relative',
+          minHeight: '300px',
+          display: 'flex',
+          alignItems: 'start',
+        }}
+      >
         <IconButton
           sx={[
             {
@@ -121,12 +129,14 @@ const ImageDialog = ({ prefix, control, images, setCurrent, current }) => {
 
 export default ImageDialog;
 
-export function imagePath(prefix, image, thumbnail = false) {
-  if (thumbnail && isPdf(image)) return pdf;
-  const folder = image.startsWith('t_') ? 'tmp' : prefix;
-  return `/images/${folder}/${thumbnail ? 's_' : ''}${image}`;
+export function imagePath(prefix, image, sizePrefix = '') {
+  if (sizePrefix && isPdf(image)) {
+    return sizePrefix == 'm_' ? pdf_m : pdf;
+  }
+  const folder = image?.startsWith('t_') ? 'tmp' : prefix;
+  return `/images/${folder}/${sizePrefix}${image}`;
 }
 
 export function isPdf(fileName) {
-  return fileName.endsWith('.pdf');
+  return fileName?.endsWith('.pdf');
 }

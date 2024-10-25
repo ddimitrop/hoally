@@ -2,6 +2,7 @@ import {
   AppError,
   handleErrors,
   INVITATION_TOKEN_INVALID,
+  NO_ACCESS,
   NO_ADMIN_ROLE,
 } from '../../app/src/errors.mjs';
 import { getUser } from './hoauser.mjs';
@@ -252,6 +253,10 @@ export class Member {
         from member m 
         where m.community_id = ${communityId}
         and m.hoauser_id = ${hoaUserId}`;
+
+    if (!member.id) {
+      throw new AppError(NO_ACCESS);
+    }
 
     return new Member(connection, member, hoaUserId);
   }
