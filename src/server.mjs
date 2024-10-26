@@ -224,7 +224,11 @@ export function prepareConnection(options) {
 
   const imageStore = new ImageStore(imagesPath);
 
-  return { crypto, sql, sendMail, imageStore };
+  const flags = JSON.parse(
+    fs.readFileSync(`${SECRETS_DIRECTORY}/flags/${environment}.json`, 'utf8'),
+  );
+
+  return { crypto, sql, sendMail, imageStore, flags };
 }
 
 const api = {

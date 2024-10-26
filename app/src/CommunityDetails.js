@@ -142,6 +142,7 @@ const CommunityDetails = ({ stepper, community, moveNext }) => {
                     setStateValue(state);
                     setZipValue(zip);
                   }}
+                  googleMapsKey={window.getFlag('googleMapsKey')}
                 />
               </Box>
               <Info

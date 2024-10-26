@@ -16,6 +16,7 @@ import InvitationReject, { rejectLoader } from './InvitationReject';
 import GlobalContext from './Global';
 import { StrictMode } from 'react';
 import { RequireAuth, DefaultLanding } from './Navigate';
+import { getData } from './json-utils';
 
 const router = createBrowserRouter([
   {
@@ -108,11 +109,15 @@ const router = createBrowserRouter([
   },
 ]);
 
-const root = createRoot(document.getElementById('root'));
-root.render(
-  <GlobalContext>
-    <StrictMode>
-      <RouterProvider router={router} />
-    </StrictMode>
-  </GlobalContext>,
-);
+getData('/api/flags').then(({ flags }) => {
+  window.getFlag = (key) => flags[key];
+
+  const root = createRoot(document.getElementById('root'));
+  root.render(
+    <GlobalContext>
+      <StrictMode>
+        <RouterProvider router={router} />
+      </StrictMode>
+    </GlobalContext>,
+  );
+});

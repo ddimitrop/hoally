@@ -8,9 +8,6 @@ import Typography from '@mui/material/Typography';
 import parse from 'autosuggest-highlight/parse';
 import { debounce } from '@mui/material/utils';
 
-// HOAlly API key
-const GOOGLE_MAPS_API_KEY = 'AIzaSyAp0n5HB3ihwxGoYHAG7X-kjiM0Ln_1uys';
-
 function loadScript(src, position, id) {
   if (!position) {
     return;
@@ -47,6 +44,7 @@ export default function MapsAutoComplete({
   onSelect,
   initValue,
   readOnly,
+  googleMapsKey,
 }) {
   const [value, setValue] = useState({
     description: initValue,
@@ -59,7 +57,7 @@ export default function MapsAutoComplete({
   if (typeof window !== 'undefined' && !loaded.current) {
     if (!document.querySelector('#google-maps')) {
       loadScript(
-        `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&loading=async`,
+        `https://maps.googleapis.com/maps/api/js?key=${googleMapsKey}&libraries=places&loading=async`,
         document.querySelector('head'),
         'google-maps',
       );
