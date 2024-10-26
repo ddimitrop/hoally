@@ -286,6 +286,14 @@ export function hoaUserApi(connection, app) {
   }
 
   app.get(
+    '/api/flags',
+    handleErrors(async (req, res) => {
+      const { flags } = connection;
+      res.json({ flags });
+    }),
+  );
+
+  app.get(
     '/api/hoauser',
     handleErrors(async (req, res) => {
       const hoaUserInst = await authenticate(req);

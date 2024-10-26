@@ -322,6 +322,7 @@ export class Topic {
 
     topics.forEach((topic) => {
       topic.propositions = [];
+      if (!topic.images) topic.images = [];
       topic.name = crypto.decrypt(topic.name);
     });
     const topicsById = topics.reduce((map, topic) => {
@@ -391,6 +392,7 @@ export class Topic {
     comments.forEach((comment) => {
       comment.name = crypto.decrypt(comment.name);
       comment.comments = [];
+      if (!comment.images) comment.images = [];
       commentsById[comment.id] = comment;
       let subComments;
       if (comment.vote_item_id) {
@@ -424,6 +426,7 @@ export class Topic {
     const communityId = topic.community_id;
     topic.propositions = [];
     topic.name = crypto.decrypt(topic.name);
+    if (!topic.images) topic.images = [];
 
     const propositions = await sql`
         select * from vote_item v 
@@ -472,6 +475,7 @@ export class Topic {
     comments.forEach((comment) => {
       comment.name = crypto.decrypt(comment.name);
       comment.comments = [];
+      if (!comment.images) comment.images = [];
       commentsById[comment.id] = comment;
       let subComments;
       if (comment.vote_item_id) {

@@ -137,8 +137,8 @@ body {
   width: calc(100% - 24px);
   position: fixed;
   justify-content: center;
-  /* 56 (topbar) + 24 */
-  height: calc(100% - 80px);
+  /* 56 (topbar) + 24 + 24 */
+  height: calc(100% - 104px);
   margin: 24px 0 0 24px;
   padding-right: 24px;
   overflow-y: scroll;
