@@ -76,6 +76,8 @@ const TopicContent = ({ topic, member, community, summary, protect }) => {
 
   const cannotComment = (topic) => topic.member_id === member.id;
 
+  const cannotVote = () => community.is_observer || !topic.is_open;
+
   const topicUrl = () => `/topic/${community.id}/view/${topic.id}/`;
 
   const viewTopic = () => {
@@ -167,6 +169,7 @@ const TopicContent = ({ topic, member, community, summary, protect }) => {
                       topicId={topic.id}
                       propositionId={topic.propositions[0].id}
                       noComment={cannotComment(topic)}
+                      readonly={!topic.is_open}
                       member={member}
                     />
                   </Fragment>
@@ -194,7 +197,7 @@ const TopicContent = ({ topic, member, community, summary, protect }) => {
                   >
                     <IconButton
                       size="small"
-                      disabled={community.is_observer}
+                      disabled={cannotVote()}
                       onClick={() => loveTopic(topic)}
                       aria-label="love"
                     >
@@ -242,6 +245,7 @@ const TopicContent = ({ topic, member, community, summary, protect }) => {
                     topicId={topic.id}
                     propositionId={proposition.id}
                     noComment={cannotComment(topic)}
+                    readonly={!topic.is_open}
                     member={member}
                   />
                   {proposition.images.length ? (
@@ -264,7 +268,7 @@ const TopicContent = ({ topic, member, community, summary, protect }) => {
                   >
                     <IconButton
                       size="small"
-                      disabled={community.is_observer}
+                      disabled={cannotVote()}
                       onClick={() => {
                         vote(topic, proposition, true);
                       }}
@@ -293,7 +297,7 @@ const TopicContent = ({ topic, member, community, summary, protect }) => {
                   >
                     <IconButton
                       size="small"
-                      disabled={community.is_observer}
+                      disabled={cannotVote()}
                       onClick={() => vote(topic, proposition, false)}
                       aria-label="vote down"
                     >
