@@ -69,16 +69,21 @@ const ViewTopic = () => {
 
   const backToList = () => {
     protect.checkChange(() => {
-      navigateToTopics();
+      goBack();
     });
   };
 
-  const navigateToTopics = () => {
-    navigate(`/topic/${community.id}`);
+  const goBack = () => {
+    if (topic.is_open) {
+      navigate(`/topic/${community.id}`);
+    } else {
+      navigate(`/archived/${community.id}/recent`);
+    }
   };
 
   const cannotEdit = (topic) => {
     if (topic.member_id !== member.id || !topic.member_id) return true;
+    if (!topic.is_open) return true;
     if (
       Date.now() - new Date(topic.creation_timestamp) >
       // Edit is not allowed after 1 day.
@@ -92,6 +97,7 @@ const ViewTopic = () => {
 
   const canArchive = (topic) => {
     if (!topic.id) return false;
+    if (!topic.is_open) return false;
     if (topic.member_id === member.id) return true;
     if (member.is_board_member) {
       return (
@@ -200,7 +206,7 @@ const ViewTopic = () => {
       />
       <DeleteConfirmDialog
         control={archiveDialog}
-        onDelete={navigateToTopics}
+        onDelete={goBack}
         deleteApiPath={`/api/topic/${topic.id}/archive`}
         deleteMethod="POST"
         deleteTitle="Archive topic ?"

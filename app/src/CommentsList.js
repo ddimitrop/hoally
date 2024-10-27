@@ -23,6 +23,7 @@ const CommentsList = ({
   propositionId,
   commentId,
   noComment,
+  readonly,
   member,
 }) => {
   const [addComment, setAddComment] = useState(false);
@@ -121,7 +122,7 @@ const CommentsList = ({
     )
   ) : (
     <Fragment>
-      {noComment ? (
+      {noComment || readonly ? (
         ''
       ) : (
         <Tooltip title="Add your own comment. Your nickname and address will be visible with it.">
@@ -217,6 +218,7 @@ const CommentsList = ({
                       topicId={topicId}
                       commentId={comment.id}
                       noComment={cannotReply(comment)}
+                      readonly={readonly}
                       member={member}
                     />
                   </Fragment>

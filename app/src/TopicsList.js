@@ -147,11 +147,15 @@ const TopicsList = () => {
   );
 };
 
-export async function topicsLoader({ params: { communityId } }) {
+export async function topicsLoader({ params: { communityId, range } }) {
   try {
+    let topicsQuery = '';
+    if (range) {
+      topicsQuery = `?isOpen=false${range === 'recent' ? '&from=6 mons' : ''}`;
+    }
     const community = await getData(`/api/community/${communityId}`);
     const member = await getData(`/api/member/user/${communityId}`);
-    const topics = await getData(`/api/topic/${communityId}`);
+    const topics = await getData(`/api/topic/${communityId}${topicsQuery}`);
     return { community, member, topics };
   } catch ({ message: error }) {
     return { error };

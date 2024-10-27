@@ -2,6 +2,7 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
+import Divider from '@mui/material/Divider';
 import Icon from '@mui/material/Icon';
 import ListItemText from '@mui/material/ListItemText';
 import Drawer from '@mui/material/Drawer';
@@ -10,7 +11,7 @@ import SettingsDialog from './SettingsDialog';
 import { getData } from './json-utils.js';
 import { Global } from './Global';
 import { useContext, useState, Fragment } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { flagState } from './state-utils.js';
 import { useLogout } from './Navigate.js';
 
@@ -19,6 +20,11 @@ const AppDrawer = ({ control }) => {
   const settings = flagState(useState(false));
   const moveToLogout = useLogout();
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = useParams();
+
+  const isTopic = location.pathname.startsWith('/topic');
+  const isArchived = location.pathname.startsWith('/archived');
 
   const logout = function () {
     getData('/api/hoauser/logout')
@@ -35,6 +41,14 @@ const AppDrawer = ({ control }) => {
 
   const goToCommunities = () => {
     navigate('/community');
+  };
+
+  const goToArchived = (range) => {
+    navigate(`/archived/${params.communityId}/${range}`);
+  };
+
+  const goToOpen = () => {
+    navigate(`/topic/${params.communityId}`);
   };
 
   return (
@@ -62,6 +76,41 @@ const AppDrawer = ({ control }) => {
                   <ListItemText primary={'Communities'} />
                 </ListItemButton>
               </ListItem>
+              {isTopic ? (
+                <Fragment>
+                  <Divider />
+                  <ListItem key={'Last 6 months'} disablePadding>
+                    <ListItemButton onClick={() => goToArchived('recent')}>
+                      <ListItemIcon>
+                        <Icon>inventory</Icon>
+                      </ListItemIcon>
+                      <ListItemText primary={'Last 6 months'} />
+                    </ListItemButton>
+                  </ListItem>
+                  <ListItem key={'All archived'} disablePadding>
+                    <ListItemButton onClick={() => goToArchived('all')}>
+                      <ListItemIcon>
+                        <Icon>inventory</Icon>
+                      </ListItemIcon>
+                      <ListItemText primary={'All archived'} />
+                    </ListItemButton>
+                  </ListItem>
+                </Fragment>
+              ) : isArchived ? (
+                <Fragment>
+                  <Divider />
+                  <ListItem key={'Open'} disablePadding>
+                    <ListItemButton onClick={() => goToOpen()}>
+                      <ListItemIcon>
+                        <Icon>ballot</Icon>
+                      </ListItemIcon>
+                      <ListItemText primary={'Open'} />
+                    </ListItemButton>
+                  </ListItem>
+                </Fragment>
+              ) : (
+                ''
+              )}
             </List>
           </Box>
 

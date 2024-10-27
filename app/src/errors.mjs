@@ -14,6 +14,8 @@ export const INVITATION_TOKEN_INVALID = 'Invitation token invalid';
 export const NO_ADMIN_ROLE = 'You are not a community admin';
 // No access to a source.
 export const NO_ACCESS = 'You have no access';
+// The topic has been archive.
+export const NOT_OPEN = 'The topic has been archived';
 
 export const APP_ERRORS = [
   NO_AUTHENTICATION_COOKIE,

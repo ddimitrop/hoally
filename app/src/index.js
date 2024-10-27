@@ -88,6 +88,15 @@ const router = createBrowserRouter([
         loader: topicsLoader,
       },
       {
+        path: 'archived/:communityId/:range',
+        element: (
+          <RequireAuth>
+            <TopicsList />
+          </RequireAuth>
+        ),
+        loader: topicsLoader,
+      },
+      {
         path: 'topic/:communityId/edit/:topicId/',
         element: (
           <RequireAuth>

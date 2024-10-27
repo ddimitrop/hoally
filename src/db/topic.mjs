@@ -1,5 +1,10 @@
 import { getUser } from './hoauser.mjs';
-import { AppError, handleErrors, NO_ACCESS } from '../../app/src/errors.mjs';
+import {
+  AppError,
+  handleErrors,
+  NO_ACCESS,
+  NOT_OPEN,
+} from '../../app/src/errors.mjs';
 import multer from 'multer';
 
 export class Topic {
@@ -306,7 +311,13 @@ export class Topic {
     return topicId;
   }
 
-  static async getList(connection, communityId, hoaUserId, isOpen = true) {
+  static async getList(
+    connection,
+    communityId,
+    hoaUserId,
+    isOpen = true,
+    from = '100 years',
+  ) {
     const { sql, crypto } = connection;
     const topics = await sql`
       select t.*, m.address, h.encrypted_name as name
@@ -318,6 +329,8 @@ export class Topic {
           where community_id = ${communityId} 
             and hoauser_id = ${hoaUserId})
         and is_open = ${isOpen}
+        and (archive_timestamp is null or 
+             archive_timestamp >= LOCALTIMESTAMP - cast(${from} AS INTERVAL))
         order by id asc`;
 
     topics.forEach((topic) => {
@@ -337,7 +350,9 @@ export class Topic {
             select max(community_id) from member 
             where community_id = ${communityId} 
               and hoauser_id = ${hoaUserId})
-          and t.is_open = ${isOpen}`;
+          and t.is_open = ${isOpen}
+          and (archive_timestamp is null or 
+               archive_timestamp >= LOCALTIMESTAMP - cast(${from} AS INTERVAL))`;
 
     const propositionsById = {};
     propositions.forEach((proposition) => {
@@ -368,7 +383,10 @@ export class Topic {
               select max(community_id) from member 
               where community_id = ${communityId} 
                 and hoauser_id = ${hoaUserId})
-            and t.is_open = ${isOpen})
+            and t.is_open = ${isOpen}
+            and (archive_timestamp is null or 
+                 archive_timestamp >= LOCALTIMESTAMP - cast(${from} AS INTERVAL))
+        )
         group by vote_item_id`;
 
     votes.forEach((vote) => {
@@ -385,8 +403,12 @@ export class Topic {
             where community_id=(
               select max(community_id) from member 
               where community_id = ${communityId} 
-                and hoauser_id = ${hoaUserId}))
-            order by id asc`;
+                and hoauser_id = ${hoaUserId})
+            and is_open = ${isOpen}
+            and (archive_timestamp is null or 
+                 archive_timestamp >= LOCALTIMESTAMP - cast(${from} AS INTERVAL))
+        )
+        order by id asc`;
 
     const commentsById = {};
     comments.forEach((comment) => {
@@ -543,9 +565,16 @@ export function topicApi(connection, app) {
     '/api/topic/:communityId',
     handleErrors(async (req, res) => {
       const { communityId } = req.params;
+      const { isOpen, from } = req.query;
       const hoaUserInst = await getUser(connection, req);
       const hoaUserId = hoaUserInst.getData().id;
-      const topics = await Topic.getList(connection, communityId, hoaUserId);
+      const topics = await Topic.getList(
+        connection,
+        communityId,
+        hoaUserId,
+        isOpen,
+        from,
+      );
       res.json(topics);
     }),
   );
@@ -579,6 +608,10 @@ export function topicApi(connection, app) {
         images,
       } = req.body;
       const topicInst = await Topic.get(connection, hoaUserId, id);
+
+      if (!topicInst.getData().is_open) {
+        throw new AppError(NOT_OPEN);
+      }
 
       await topicInst.update(
         memberId,
@@ -615,6 +648,9 @@ export function topicApi(connection, app) {
       const hoaUserInst = await getUser(connection, req);
       const hoaUserId = hoaUserInst.getData().id;
       const topicInst = await Topic.get(connection, hoaUserId, topicId);
+      if (!topicInst.getData().is_open) {
+        throw new AppError(NOT_OPEN);
+      }
       const votes = await topicInst.vote(voteItemId, vote);
       res.json({ votes });
     }),
@@ -645,6 +681,9 @@ export function topicApi(connection, app) {
       const hoaUserInst = await getUser(connection, req);
       const hoaUserId = hoaUserInst.getData().id;
       const topicInst = await Topic.get(connection, hoaUserId, topicId);
+      if (!topicInst.getData().is_open) {
+        throw new AppError(NOT_OPEN);
+      }
       const comment = await topicInst.comment(
         voteItemId || null,
         commentId || null,
@@ -663,6 +702,9 @@ export function topicApi(connection, app) {
       const hoaUserInst = await getUser(connection, req);
       const hoaUserId = hoaUserInst.getData().id;
       const topicInst = await Topic.get(connection, hoaUserId, topicId);
+      if (!topicInst.getData().is_open) {
+        throw new AppError(NOT_OPEN);
+      }
       const comment = await topicInst.changeComment(id, discussion, images);
       res.json({ comment });
     }),
@@ -675,6 +717,9 @@ export function topicApi(connection, app) {
       const hoaUserInst = await getUser(connection, req);
       const hoaUserId = hoaUserInst.getData().id;
       const topicInst = await Topic.get(connection, hoaUserId, topicId);
+      if (!topicInst.getData().is_open) {
+        throw new AppError(NOT_OPEN);
+      }
       await topicInst.removeComment(id);
       res.json({ ok: true });
     }),
