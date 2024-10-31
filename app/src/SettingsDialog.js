@@ -57,6 +57,8 @@ const SettingsDialog = ({ control }) => {
     emailUsed.clearError();
   }
 
+  const nameChanged = () => getFormValue('name') !== global.hoaUser.name;
+
   const emailChanged = () => getFormValue('email') !== global.hoaUser.email;
 
   const fullNameChanged = () =>
@@ -66,7 +68,8 @@ const SettingsDialog = ({ control }) => {
     getFormValue('password') && getFormValue('password') !== previousPassword;
 
   function checkWasChanged() {
-    const wasChanged = emailChanged() || fullNameChanged() || passwordChanged();
+    const wasChanged =
+      emailChanged() || nameChanged() || fullNameChanged() || passwordChanged();
 
     setWasChanged(wasChanged);
     return wasChanged;
@@ -146,6 +149,18 @@ const SettingsDialog = ({ control }) => {
       >
         <DialogTitle>Account settings</DialogTitle>
         <DialogContent>
+          <TextField
+            margin="dense"
+            id="name"
+            name="name"
+            label="Nickname"
+            defaultValue={global.hoaUser.name}
+            fullWidth
+            variant="standard"
+            autoComplete="name"
+            onChange={() => checkWasChanged()}
+            ref={(node) => form.provide(node, 'name')}
+          />
           <TextField
             margin="dense"
             id="fullName"

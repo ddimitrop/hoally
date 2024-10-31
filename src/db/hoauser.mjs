@@ -7,6 +7,7 @@ import {
   EMAIL_NOT_REGISTERED,
   handleErrors,
 } from '../../app/src/errors.mjs';
+import { OAuth2Client } from 'google-auth-library';
 
 /**
  * A user of the Hoally site. It can be a member of 0 to MAX_USER_COMMUNITIES.
@@ -30,14 +31,18 @@ export class HoaUser {
       where id = ${this.data.id}`;
   }
 
-  async updateFullName(fullName) {
-    if (fullName === this.data.full_name) return;
+  async updateName(name, fullName) {
+    if (fullName === this.data.full_name && name === this.data.name) return;
     const { sql, crypto } = this.connection;
     await sql`
       update hoauser
-      set encrypted_full_name = ${crypto.encrypt(fullName)},
+      set 
+          encrypted_name = ${crypto.encrypt(name)},
+          encrypted_full_name = ${crypto.encrypt(fullName)},
           last_update_timestamp = LOCALTIMESTAMP
       where id = ${this.data.id}`;
+
+    this.data.name = name;
     this.data.full_name = fullName;
   }
 
@@ -88,15 +93,6 @@ export class HoaUser {
     this.data.default_community = communityId;
   }
 
-  static async nameUsed(connection, name) {
-    const { sql, crypto } = connection;
-    const data = await sql`
-      select count(1) from hoauser
-      where hashed_name = ${crypto.hash(name)}`;
-
-    return Number(data[0].count) !== 0;
-  }
-
   static async emailUsed(connection, email) {
     const { sql, crypto } = connection;
     const data = await sql`
@@ -106,11 +102,17 @@ export class HoaUser {
     return Number(data[0].count) !== 0;
   }
 
-  static async create(connection, name, fullName, email, password) {
+  static async create(
+    connection,
+    name,
+    fullName,
+    email,
+    password,
+    emailValidated,
+  ) {
     const { sql, crypto } = connection;
     const data = await sql`
       insert into hoauser (
-        hashed_name,
         encrypted_name,
         encrypted_full_name,
         hashed_email,
@@ -118,12 +120,11 @@ export class HoaUser {
         email_validated,
         hashed_password
       ) values (
-        ${crypto.hash(name)},
         ${crypto.encrypt(name)},
         ${crypto.encrypt(fullName)},
         ${crypto.hash(email)},
         ${crypto.encrypt(email)},      
-        false, 
+        ${emailValidated}, 
         ${crypto.hash(password)}
       )
 
@@ -134,7 +135,6 @@ export class HoaUser {
 
   static decrypt(crypto, data) {
     delete data.hashed_password;
-    delete data.hashed_name;
     delete data.hashed_email;
     delete data.hashed_token;
     delete data.token_creation_timestamp;
@@ -155,11 +155,11 @@ export class HoaUser {
 
   static async get(connection, credentials) {
     const { sql } = connection;
-    const [hashedName, hashedPassword] = credentials;
+    const [hashedEmail, hashedPassword] = credentials;
     const data = await sql`
       select *
       from hoauser
-      where hashed_name = ${hashedName}
+      where hashed_email = ${hashedEmail}
       and hashed_password = ${hashedPassword}`;
     if (data.length !== 1) {
       throw new AppError(LOGIN_ERROR);
@@ -198,8 +198,8 @@ export class HoaUser {
     }
   }
 
-  static loginCredentials(crypto, name, password) {
-    return [crypto.hash(name), crypto.hash(password)];
+  static loginCredentials(crypto, email, password) {
+    return [crypto.hash(email), crypto.hash(password)];
   }
 
   static async getToken(connection, email) {
@@ -222,6 +222,15 @@ export class HoaUser {
 
     return token;
   }
+
+  static async forcePassword(connection, email, password) {
+    const { sql, crypto } = connection;
+    await sql`
+      update hoauser
+      set hashed_password = ${crypto.hash(password)},
+          last_update_timestamp = LOCALTIMESTAMP
+      where hashed_email = ${crypto.hash(email)}`;
+  }
 }
 
 /**
@@ -234,7 +243,7 @@ const AUTH_COOKIE = 'HAU';
 function parseCookie(cookie) {
   const authCookie = cookie
     .split(';')
-    .map((c) => c.split('='))
+    .map((c) => c.trim().split('='))
     .find((p) => p && p.length === 2 && p[0] === AUTH_COOKIE);
   const auth = authCookie[1];
   const credentials = auth.split('-');
@@ -265,12 +274,14 @@ export async function getUser(connection, req) {
 
 /** Loads and returns the user using the authentication cookie. */
 export function hoaUserApi(connection, app) {
+  const oauth2Client = new OAuth2Client();
+
   async function authenticate(req) {
     return getUser(connection, req);
   }
 
-  function getCredentials(name, password) {
-    return HoaUser.loginCredentials(connection.crypto, name, password);
+  function getCredentials(email, password) {
+    return HoaUser.loginCredentials(connection.crypto, email, password);
   }
 
   async function tokenEmail(req, res, subject, description, path) {
@@ -309,19 +320,19 @@ export function hoaUserApi(connection, app) {
       const hoaUserInst = await HoaUser.getWithToken(connection, token);
       await hoaUserInst.updatePassword(password);
       const hoaUser = hoaUserInst.getData();
-      const { name } = hoaUser;
-      const credentials = getCredentials(name, password);
+      const { email } = hoaUser;
+      const credentials = getCredentials(email, password);
       setCookie(res, credentials);
       res.json({ hoaUser });
     }),
   );
 
-  /** Signs up an existing user using name/password and sets the authentication cookie. */
+  /** Signs up an existing user using email/password and sets the authentication cookie. */
   app.post(
     '/api/hoauser/signin',
     handleErrors(async (req, res) => {
-      const { name, password } = req.body;
-      const credentials = getCredentials(name, password);
+      const { email, password } = req.body;
+      const credentials = getCredentials(email, password);
       const hoaUserInst = await HoaUser.get(connection, credentials);
       const hoaUser = hoaUserInst.getData();
       setCookie(res, credentials);
@@ -342,16 +353,17 @@ export function hoaUserApi(connection, app) {
   app.post(
     '/api/hoauser',
     handleErrors(async (req, res) => {
-      const { name, fullName, email, password } = req.body;
+      const { name, fullName, email, password, emailVerified } = req.body;
       const hoaUserInst = await HoaUser.create(
         connection,
         name,
         fullName,
         email,
         password,
+        emailVerified,
       );
       const hoaUser = hoaUserInst.getData();
-      const credentials = getCredentials(name, password);
+      const credentials = getCredentials(email, password);
       setCookie(res, credentials);
       res.json({ hoaUser });
     }),
@@ -363,16 +375,16 @@ export function hoaUserApi(connection, app) {
     handleErrors(async (req, res) => {
       let hoaUserInst = await authenticate(req);
       let hoaUser = hoaUserInst.getData();
-      const { fullName, email, password } = req.body;
-      if (fullName !== hoaUser.full_name) {
-        await hoaUserInst.updateFullName(fullName);
+      const { name, fullName, email, password } = req.body;
+      if (name !== hoaUser.name || fullName !== hoaUser.full_name) {
+        await hoaUserInst.updateName(name, fullName);
       }
       if (email !== hoaUser.email) {
         await hoaUserInst.updateEmail(email);
       }
       if (password) {
         await hoaUserInst.updatePassword(password);
-        const credentials = getCredentials(hoaUser.name, password);
+        const credentials = getCredentials(hoaUser.email, password);
         setCookie(res, credentials);
         hoaUserInst = await HoaUser.get(connection, credentials);
       } else {
@@ -390,16 +402,6 @@ export function hoaUserApi(connection, app) {
       const hoaUserInst = await authenticate(req);
       await hoaUserInst.unregister();
       res.json({ ok: true });
-    }),
-  );
-
-  /** Checks if a user name is already used. */
-  app.post(
-    '/api/hoauser/validate/name',
-    handleErrors(async (req, res) => {
-      const { name } = req.body;
-      const result = await HoaUser.nameUsed(connection, name);
-      res.json({ ok: !result });
     }),
   );
 
@@ -462,6 +464,49 @@ export function hoaUserApi(connection, app) {
       const hoaUserInst = await authenticate(req);
       await hoaUserInst.setDefaultCommunity(communityId);
       res.json({ ok: true });
+    }),
+  );
+
+  async function getGoogleOathPayload(credential) {
+    const { flags } = connection;
+    const { googleClientId } = flags;
+    const ticket = await oauth2Client.verifyIdToken({
+      idToken: credential,
+      audience: googleClientId,
+    });
+    return ticket.getPayload();
+  }
+
+  /** Google sign up. */
+  app.post(
+    '/api/hoauser/google-signup',
+    handleErrors(async (req, res) => {
+      const { credential } = req.body;
+      const payload = await getGoogleOathPayload(credential);
+      res.json({ payload });
+    }),
+  );
+
+  /** Google account merge. */
+  app.post(
+    '/api/hoauser/google-merge',
+    handleErrors(async (req, res) => {
+      const { credential } = req.body;
+      const payload = await getGoogleOathPayload(credential);
+      const { email, sub: password, email_verified: emailVerified } = payload;
+      // If Google says that the user owns this email and its verified
+      // we can reset the password
+      if (emailVerified) {
+        await HoaUser.forcePassword(connection, email, password);
+        // Auto sign-in.
+        const credentials = getCredentials(email, password);
+        const hoaUserInst = await HoaUser.get(connection, credentials);
+        const hoaUser = hoaUserInst.getData();
+        setCookie(res, credentials);
+        res.json({ hoaUser });
+      } else {
+        throw new AppError(LOGIN_ERROR);
+      }
     }),
   );
 }

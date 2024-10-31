@@ -5,3 +5,4 @@ alter table comment drop column documents;
 alter table topic alter column images type varchar(100)[8];
 alter table vote_item alter column images type varchar(100)[8];
 alter table comment alter column images type varchar(100)[8];
+alter table hoauser drop column hashed_name;

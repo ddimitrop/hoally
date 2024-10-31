@@ -12,18 +12,30 @@ import { formData } from './state-utils.js';
 import { LOGIN_ERROR } from './errors.mjs';
 import RecoveryDialog from './RecoveryDialog.js';
 import { useDefaultLanding } from './Navigate.js';
+import GoogleSignIn from './GoogleSignIn.js';
+import { isFieldUsed } from './SignupDialog';
 
-const SinginDialog = ({ control, skipRedirect }) => {
+const SinginDialog = ({ control, skipRedirect, signupInstead }) => {
   const global = useContext(Global);
   const defaultLanding = useDefaultLanding();
   let [errorMessage, setErrorMessage] = useState('');
   let [showRecoverButton, setShowRecoverButton] = useState(false);
   let [showRecoverDialog, setShowRecoverDialog] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [payload, setPayload] = useState({});
+  const [emailUsed, setEmailUsed] = useState(false);
+  const [credential, setCredential] = useState('');
 
   function close() {
     setErrorMessage('');
     setShowRecoverButton(false);
     setShowRecoverDialog(false);
+    setEmail('');
+    setPassword('');
+    setPayload({});
+    setEmailUsed(false);
+    setCredential('');
     control.close();
   }
 
@@ -34,6 +46,13 @@ const SinginDialog = ({ control, skipRedirect }) => {
 
   function exceptionMessage(e) {
     setErrorMessage(`There was a problem: "${e.message}".`);
+  }
+
+  function clearEmailError() {
+    setErrorMessage('');
+    setEmailUsed(false);
+    setCredential('');
+    setPayload({});
   }
 
   function signIn(data) {
@@ -47,7 +66,10 @@ const SinginDialog = ({ control, skipRedirect }) => {
           close();
         } else {
           setErrorMessage(appError);
-          setShowRecoverButton(appError === LOGIN_ERROR);
+          isFieldUsed('email', data.email).then((used) => {
+            setEmailUsed(used);
+            setShowRecoverButton(appError === LOGIN_ERROR);
+          });
         }
       })
       .catch((e) => {
@@ -56,8 +78,61 @@ const SinginDialog = ({ control, skipRedirect }) => {
   }
 
   function triggerRecoverDialog() {
-    setShowRecoverButton(false);
-    setShowRecoverDialog(true);
+    if (payload.emailVerified) {
+      if (emailUsed) {
+        mergeAccount();
+      } else {
+        register();
+      }
+    } else {
+      setShowRecoverButton(false);
+      setShowRecoverDialog(true);
+    }
+  }
+
+  function mergeAccount() {
+    return postData('/api/hoauser/google-merge', { credential })
+      .then(({ hoaUser }) => {
+        if (hoaUser) {
+          global.loadHoaUser(hoaUser);
+          if (!skipRedirect) {
+            defaultLanding();
+            close();
+          }
+        }
+      })
+      .catch((e) => {
+        exceptionMessage(e);
+      });
+  }
+
+  function register() {
+    postData('/api/hoauser', payload)
+      .then(({ hoaUser }) => {
+        if (!skipRedirect) {
+          defaultLanding();
+        }
+        global.loadHoaUser(hoaUser);
+        close();
+      })
+      .catch((e) => {
+        exceptionMessage(e);
+      });
+  }
+
+  async function onGoogleSignIn(payload, credential) {
+    const {
+      sub: password,
+      email,
+      email_verified: emailVerified,
+      given_name: name,
+      name: fullName,
+    } = payload;
+    setPayload({ password, email, emailVerified, name, fullName });
+    setEmail(email);
+    setPassword(password);
+    signIn({ email, password });
+    setCredential(credential);
   }
 
   return (
@@ -82,12 +157,17 @@ const SinginDialog = ({ control, skipRedirect }) => {
             autoFocus
             required
             margin="dense"
-            id="name"
-            name="name"
-            label="Nickname"
+            id="email"
+            name="email"
+            label="Email"
             fullWidth
             variant="standard"
-            autoComplete="first-name"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              clearEmailError();
+            }}
           />
           <TextField
             required
@@ -99,6 +179,11 @@ const SinginDialog = ({ control, skipRedirect }) => {
             fullWidth
             variant="standard"
             autoComplete="new-password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              clearEmailError();
+            }}
           />
           <Alert
             sx={{
@@ -107,9 +192,13 @@ const SinginDialog = ({ control, skipRedirect }) => {
             }}
             severity="error"
             action={
-              showRecoverButton ? (
+              showRecoverButton && (payload.emailVerified || emailUsed) ? (
                 <Button size="small" onClick={triggerRecoverDialog}>
-                  Forgot password
+                  {payload.emailVerified
+                    ? emailUsed
+                      ? 'Merge account'
+                      : 'Sign up'
+                    : 'Forgot password'}
                 </Button>
               ) : (
                 ''
@@ -121,11 +210,29 @@ const SinginDialog = ({ control, skipRedirect }) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={close}>Cancel</Button>
-          <Button type="submit">Sign in</Button>
+          <Button variant="contained" type="submit">
+            Sign in
+          </Button>
         </DialogActions>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderTop: 'solid 1px rgba(0,0,0, 0.12)',
+            height: '80px',
+          }}
+        >
+          <GoogleSignIn
+            googleClientId={window.getFlag('googleClientId')}
+            text="signin_with"
+            onSignIn={onGoogleSignIn}
+            personalized={true}
+          />
+        </div>
       </Dialog>
 
-      <RecoveryDialog control={recoveryControl} />
+      <RecoveryDialog control={recoveryControl} defaultEmail={email} />
     </Fragment>
   );
 };

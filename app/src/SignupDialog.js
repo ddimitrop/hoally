@@ -11,8 +11,16 @@ import { useState, useContext, Fragment } from 'react';
 import { Global } from './Global.js';
 import { postData } from './json-utils.js';
 import { sendValidationEmail, sendRecoverEmail } from './email-utils.js';
-import { formCapture, formData } from './state-utils.js';
+import { formData } from './state-utils.js';
 import { useDefaultLanding } from './Navigate.js';
+import GoogleSignIn from './GoogleSignIn.js';
+
+export async function isFieldUsed(field, value) {
+  const { ok } = await postData(`/api/hoauser/validate/${field}`, {
+    [field]: value,
+  });
+  return !ok;
+}
 
 export function useAlreadyUsedCheck(field, label, onUsed, onException) {
   let [error, setError] = useState(false);
@@ -24,10 +32,7 @@ export function useAlreadyUsedCheck(field, label, onUsed, onException) {
     if (value === newValue) return isUsed;
     value = newValue;
     try {
-      const { ok } = await postData(`/api/hoauser/validate/${field}`, {
-        [field]: value,
-      });
-      isUsed = !ok;
+      isUsed = await isFieldUsed(field, value);
       if (isUsed) {
         onUsed({ field, label, value });
       }
@@ -54,6 +59,14 @@ const SingupDialog = ({ control, skipRedirect, defaultEmail }) => {
   let [errorMessage, setErrorMessage] = useState('');
   let [recoveryLinkSuccess, setRecoveryLinkSuccess] = useState(false);
   let [signupSuccess, setSignupSuccess] = useState(false);
+  const [name, setName] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState(defaultEmail || '');
+  const [password, setPassword] = useState('');
+  const [passwordDisabled, setPasswordDisabled] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [credential, setCredential] = useState('');
+
   const closeSignupSuccess = () => {
     setSignupSuccess(false);
     if (!skipRedirect) {
@@ -61,7 +74,6 @@ const SingupDialog = ({ control, skipRedirect, defaultEmail }) => {
     }
   };
   const closeRecoveryLinkSuccess = () => setRecoveryLinkSuccess(false);
-  const form = formCapture();
 
   const onUsedField = ({ label }) => {
     setErrorMessage(`There is already an account with this ${label}.`);
@@ -74,27 +86,42 @@ const SingupDialog = ({ control, skipRedirect, defaultEmail }) => {
     exceptionMessage,
   );
 
-  const nameUsed = useAlreadyUsedCheck(
-    'name',
-    'nickname',
-    onUsedField,
-    exceptionMessage,
-  );
-
-  function clearNameError() {
-    setErrorMessage('');
-    nameUsed.clearError();
-  }
-
   function clearEmailError() {
     setErrorMessage('');
     emailUsed.clearError();
+    if (passwordDisabled) {
+      setPassword('');
+      setPasswordDisabled(false);
+    }
+    setEmailVerified(false);
+    setCredential('');
   }
 
   function close() {
-    clearNameError();
+    setName('');
+    setFullName('');
+    setEmail('');
+    setPassword('');
+    setPasswordDisabled(false);
     clearEmailError();
     control.close();
+  }
+
+  async function onGoogleSignUp(payload, credential) {
+    const {
+      sub,
+      email,
+      email_verified: emailVerified,
+      given_name: name,
+      name: fullName,
+    } = payload;
+    setEmail(email);
+    setName(name);
+    setFullName(fullName);
+    setPassword(sub);
+    setPasswordDisabled(true);
+    setEmailVerified(emailVerified);
+    setCredential(credential);
   }
 
   function exceptionMessage({ message }) {
@@ -106,7 +133,7 @@ const SingupDialog = ({ control, skipRedirect, defaultEmail }) => {
       setErrorMessage(`The nickname is shown in posts - no emails please.`);
       return false;
     }
-    return !(await nameUsed.check(name));
+    return true;
   }
 
   async function ensureNotAlreadyUsed(data) {
@@ -122,16 +149,24 @@ const SingupDialog = ({ control, skipRedirect, defaultEmail }) => {
   function register(data) {
     ensureNotAlreadyUsed(data)
       .then((ok) => {
-        if (!ok || nameUsed.hasError() || emailUsed.hasError()) return;
+        if (!ok || emailUsed.hasError()) return;
+        data.emailVerified = emailVerified;
+        if (!data.password) data.password = password;
         return postData('/api/hoauser', data).then(({ hoaUser }) => {
           if (!defaultEmail || hoaUser.email !== defaultEmail) {
-            sendValidationEmail(hoaUser.email)
-              .then(() => {
-                setSignupSuccess(true);
-              })
-              .catch((e) => {
-                global.setAppError(e.message);
-              });
+            if (!emailVerified) {
+              sendValidationEmail(hoaUser.email)
+                .then(() => {
+                  setSignupSuccess(true);
+                })
+                .catch((e) => {
+                  global.setAppError(e.message);
+                });
+            } else {
+              if (!skipRedirect) {
+                defaultLanding();
+              }
+            }
           } else {
             hoaUser.email_validated = true;
           }
@@ -144,15 +179,35 @@ const SingupDialog = ({ control, skipRedirect, defaultEmail }) => {
       });
   }
 
-  function recoverAccount() {
-    sendRecoverEmail(form.get('email'))
-      .then(() => {
-        close();
-        setRecoveryLinkSuccess(true);
+  function mergeAccount() {
+    return postData('/api/hoauser/google-merge', { credential })
+      .then(({ hoaUser }) => {
+        if (hoaUser) {
+          global.loadHoaUser(hoaUser);
+          if (!skipRedirect) {
+            defaultLanding();
+            close();
+          }
+        }
       })
       .catch((e) => {
         exceptionMessage(e);
       });
+  }
+
+  function recoverAccount() {
+    if (emailVerified) {
+      mergeAccount();
+    } else {
+      sendRecoverEmail(email)
+        .then(() => {
+          close();
+          setRecoveryLinkSuccess(true);
+        })
+        .catch((e) => {
+          exceptionMessage(e);
+        });
+    }
   }
 
   return (
@@ -185,9 +240,11 @@ const SingupDialog = ({ control, skipRedirect, defaultEmail }) => {
             fullWidth
             variant="standard"
             autoComplete="first-name"
-            error={nameUsed.hasError()}
-            onChange={clearNameError}
             onBlur={(event) => validateName(event.currentTarget.value)}
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+            }}
           />
           <TextField
             margin="dense"
@@ -197,6 +254,10 @@ const SingupDialog = ({ control, skipRedirect, defaultEmail }) => {
             fullWidth
             variant="standard"
             autoComplete="name"
+            value={fullName}
+            onChange={(e) => {
+              setFullName(e.target.value);
+            }}
           />
           <TextField
             required
@@ -207,12 +268,14 @@ const SingupDialog = ({ control, skipRedirect, defaultEmail }) => {
             type="email"
             fullWidth
             variant="standard"
-            defaultValue={defaultEmail}
             autoComplete="email"
             error={emailUsed.hasError()}
-            onChange={clearEmailError}
             onBlur={(event) => emailUsed.check(event.currentTarget.value)}
-            ref={(node) => form.provide(node, 'email')}
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              clearEmailError();
+            }}
           />
           <TextField
             required
@@ -224,6 +287,11 @@ const SingupDialog = ({ control, skipRedirect, defaultEmail }) => {
             fullWidth
             variant="standard"
             autoComplete="new-password"
+            disabled={passwordDisabled}
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+            }}
           />
           <Alert
             sx={{
@@ -241,11 +309,29 @@ const SingupDialog = ({ control, skipRedirect, defaultEmail }) => {
             }}
             onClick={recoverAccount}
           >
-            Forgot password
+            {emailVerified ? 'Merge account' : 'Forgot password'}
           </Button>
           <Button onClick={close}>Cancel</Button>
-          <Button type="submit">Subscribe</Button>
+          <Button variant="contained" type="submit">
+            Subscribe
+          </Button>
         </DialogActions>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderTop: 'solid 1px rgba(0,0,0, 0.12)',
+            height: '80px',
+          }}
+        >
+          <GoogleSignIn
+            googleClientId={window.getFlag('googleClientId')}
+            text="signup_with"
+            onSignIn={onGoogleSignUp}
+            personalized={false}
+          />
+        </div>
       </Dialog>
       <Snackbar open={signupSuccess} onClose={closeSignupSuccess}>
         <Alert onClose={closeSignupSuccess} severity="info">

@@ -7,18 +7,7 @@ import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import parse from 'autosuggest-highlight/parse';
 import { debounce } from '@mui/material/utils';
-
-function loadScript(src, position, id) {
-  if (!position) {
-    return;
-  }
-
-  const script = document.createElement('script');
-  script.setAttribute('async', '');
-  script.setAttribute('id', id);
-  script.src = src;
-  position.appendChild(script);
-}
+import { loadScriptOnce } from './json-utils.js';
 
 const autocompleteService = { current: null };
 const placesService = { current: null };
@@ -54,17 +43,12 @@ export default function MapsAutoComplete({
   const [options, setOptions] = useState([]); /** Placetype [] */
   const loaded = useRef(false);
 
-  if (typeof window !== 'undefined' && !loaded.current) {
-    if (!document.querySelector('#google-maps')) {
-      loadScript(
-        `https://maps.googleapis.com/maps/api/js?key=${googleMapsKey}&libraries=places&loading=async`,
-        document.querySelector('head'),
-        'google-maps',
-      );
-    }
-
-    loaded.current = true;
-  }
+  loadScriptOnce(
+    `https://maps.googleapis.com/maps/api/js?key=${googleMapsKey}&libraries=places&loading=async`,
+    document.querySelector('head'),
+    'google-maps',
+    loaded,
+  );
 
   const fetch = useMemo(
     () =>
@@ -100,11 +84,11 @@ export default function MapsAutoComplete({
   useEffect(() => {
     let active = true;
 
-    if (!autocompleteService.current && window.google) {
+    if (!autocompleteService.current && window.google?.maps) {
       autocompleteService.current =
         new window.google.maps.places.AutocompleteService();
     }
-    if (!placesService.current && window.google) {
+    if (!placesService.current && window.google?.maps) {
       placesService.current = new window.google.maps.places.PlacesService(
         document.createElement('div'),
       );

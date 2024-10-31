@@ -44,7 +44,6 @@ CREATE TABLE hoauser (
     id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     -- Protecting personal information by encrypting.
     -- We also need the hashed values for querying.
-    hashed_name VARCHAR(200) UNIQUE NOT NULL,
     encrypted_name VARCHAR(300) NOT NULL,
     encrypted_full_name VARCHAR(300),
     hashed_email VARCHAR(200) UNIQUE NOT NULL,
