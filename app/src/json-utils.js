@@ -93,3 +93,28 @@ export function longAgo(timestamp) {
   }
   return `Invalid date ${timestamp}`;
 }
+
+export function loadScript(src, position, id, onload = () => {}) {
+  if (!position) {
+    return;
+  }
+
+  const script = document.createElement('script');
+  script.setAttribute('async', '');
+  script.setAttribute('id', id);
+  script.onload = onload;
+  script.src = src;
+  position.appendChild(script);
+}
+
+export function loadScriptOnce(src, position, id, loaded, onload = () => {}) {
+  if (typeof window === 'undefined') return;
+  if (!loaded.current) {
+    if (!document.querySelector(`#${id}`)) {
+      loadScript(src, position, id, onload);
+    } else {
+      onload();
+    }
+    loaded.current = true;
+  }
+}

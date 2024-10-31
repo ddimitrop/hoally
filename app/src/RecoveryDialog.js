@@ -12,8 +12,7 @@ import Snackbar from '@mui/material/Snackbar';
 import { sendRecoverEmail } from './email-utils.js';
 import { EMAIL_NOT_REGISTERED } from './errors.mjs';
 
-const RecoveryDialog = (props) => {
-  const { control } = props;
+const RecoveryDialog = ({ control, defaultEmail }) => {
   const global = useContext(Global);
   let [emailSent, setEmailSent] = useState(false);
   let [unknownEmail, setUnknownEmail] = useState(false);
@@ -63,6 +62,7 @@ const RecoveryDialog = (props) => {
             margin="dense"
             id="email"
             name="email"
+            defaultValue={defaultEmail}
             label="Email Address"
             type="email"
             fullWidth
