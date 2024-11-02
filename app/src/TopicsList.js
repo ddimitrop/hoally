@@ -8,6 +8,7 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import { Global } from './Global.js';
 import { useLoaderData, useNavigate } from 'react-router-dom';
+import { useDefaultNavigate } from './Navigate.js';
 import { useState, useContext } from 'react';
 import { getData } from './json-utils.js';
 import TopicContent from './TopicContent.js';
@@ -20,6 +21,7 @@ const TopicsList = () => {
   const global = useContext(Global);
   const purify = DOMPurify(window);
   const navigate = useNavigate();
+  const defaultNavigate = useDefaultNavigate();
   const [hasRedirect, setHasRedirect] = useState(false);
 
   const isHiddenIntro = () => {
@@ -54,7 +56,7 @@ const TopicsList = () => {
           setHasRedirect(true);
           global.setAppError(errorMessage);
           global.customErrorClose(() => {
-            navigate('/community');
+            defaultNavigate();
           });
         }
       }, 0);

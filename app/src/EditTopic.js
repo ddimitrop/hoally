@@ -13,6 +13,7 @@ import { Global } from './Global.js';
 import { useRef, useContext, useState, Fragment } from 'react';
 import { hasModifications, flagState, changeProtect } from './state-utils';
 import { useParams, useLoaderData, useNavigate } from 'react-router-dom';
+import { useDefaultNavigate } from './Navigate.js';
 import { postData, getData } from './json-utils.js';
 import ClearIcon from '@mui/icons-material/Clear';
 import Attachements from './Attachments.js';
@@ -26,6 +27,7 @@ const EditTopic = () => {
   const subject = useRef(null);
   const description = useRef(null);
   const navigate = useNavigate();
+  const defaultNavigate = useDefaultNavigate();
   const { communityId, topicId } = useParams();
   const emptyProposition = () => ({ description: '', images: [] });
   const deleteDialog = flagState(useState(false));
@@ -70,7 +72,7 @@ const EditTopic = () => {
           setHasRedirect(true);
           global.setAppError(errorMessage);
           global.customErrorClose(() => {
-            navigate('/community');
+            defaultNavigate();
           });
         }
       }, 0);

@@ -24,12 +24,12 @@ const GoogleSignIn = ({
   }
 
   const initSignIn = () => {
-    google.accounts.id.initialize({
+    window.google.accounts.id.initialize({
       client_id: googleClientId,
       callback: handleCredentialResponse,
     });
 
-    google.accounts.id.renderButton(
+    window.google.accounts.id.renderButton(
       document.getElementById('googleSignInButton'),
       {
         theme: 'outline',

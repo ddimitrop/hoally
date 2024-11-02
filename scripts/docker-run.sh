@@ -5,7 +5,7 @@ environment=$2
 
 if [ ! $version ]
 then 
-  version=1.06
+  version=1.07
 fi
 
 if [ ! $environment ]
@@ -29,4 +29,6 @@ docker run --rm -t \
   --stop-signal SIGINT \
   --stop-timeout 30 \
   --name hoally-$environment hoally:$version \
-      --cert '/etc/letsencrypt/live/lacroix.mynetgear.com/'
+  --cert '/etc/letsencrypt/live/lacroix.mynetgear.com/' \
+  --forcedomain lacroix.mynetgear.com \
+  --images ${IMAGES}

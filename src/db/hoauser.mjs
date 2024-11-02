@@ -130,6 +130,14 @@ export class HoaUser {
 
       returning *
     `;
+    if (emailValidated) {
+      await connection.sendMail(
+        email,
+        'Welcome to Hoally!',
+        'On this site, you can stay informed about announcements and proposals for your HOA communities.' +
+          'You can also share your opinions by voting, commenting, and posting your own announcements or proposals.',
+      );
+    }
     return new HoaUser(connection, data[0]);
   }
 

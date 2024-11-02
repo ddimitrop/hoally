@@ -118,7 +118,7 @@ export class Member {
   async generateInvitation() {
     const { sql, crypto } = this.connection;
     const id = this.getData().id;
-    const token = crypto.uuid();
+    const token = crypto.shortRandom();
     const hashedToken = crypto.hash(token);
 
     await sql`
@@ -520,7 +520,7 @@ export function memberApi(connection, app) {
           const html = purify.sanitize(markedHtml);
           sendMail(
             invitationEmail,
-            `You are invited to join Hoally for ${communityName}`,
+            `You are invited to join ${communityName} on Hoally`,
             html,
           );
         };

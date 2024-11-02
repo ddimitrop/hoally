@@ -11,12 +11,14 @@ import ConfirmDialog from './ConfirmDialog.js';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
 import { flagState, changeProtect } from './state-utils.js';
 import TopicContent from './TopicContent.js';
+import { useDefaultNavigate } from './Navigate.js';
 import './Markdown.css';
 import { NO_AUTHENTICATION_COOKIE } from './errors.mjs';
 
 const ViewTopic = () => {
   const global = useContext(Global);
   const navigate = useNavigate();
+  const defaultNavigate = useDefaultNavigate();
   const archiveDialog = flagState(useState(false));
   const cancelDialog = flagState(useState(false));
   const [hasRedirect, setHasRedirect] = useState(false);
@@ -51,7 +53,7 @@ const ViewTopic = () => {
           setHasRedirect(true);
           global.setAppError(errorMessage);
           global.customErrorClose(() => {
-            navigate('/community');
+            defaultNavigate();
           });
         }
       }, 0);
