@@ -5,6 +5,7 @@ import Stack from '@mui/material/Stack';
 import SlideContents from './SlideContents.js';
 import { useState, useContext, useEffect, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDefaultNavigate } from './Navigate.js';
 import { useLoaderData } from 'react-router-dom';
 import CommunityDetails from './CommunityDetails.js';
 import CommunityMembers from './CommunityMembers.js';
@@ -19,6 +20,7 @@ let moveNextOnLoad = false;
 const CreateCommunity = () => {
   const global = useContext(Global);
   const navigate = useNavigate();
+  const defaultNavigate = useDefaultNavigate();
   const stepper = useStepper(0);
   const [hasRedirect, setHasRedirect] = useState(false);
 
@@ -50,7 +52,7 @@ const CreateCommunity = () => {
           setHasRedirect(true);
           global.setAppError(errorMessage);
           global.customErrorClose(() => {
-            navigate('/community');
+            defaultNavigate();
           });
         }
       }, 0);

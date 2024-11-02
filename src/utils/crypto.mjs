@@ -6,6 +6,7 @@ import {
   randomBytes,
   createHash,
   randomUUID,
+  randomInt,
 } from 'node:crypto';
 
 /**
@@ -35,6 +36,10 @@ export class Crypto {
 
   uuid() {
     return randomUUID();
+  }
+
+  shortRandom() {
+    return btoa(randomInt(0, 1000000));
   }
 }
 
