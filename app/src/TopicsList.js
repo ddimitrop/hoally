@@ -102,7 +102,17 @@ const TopicsList = () => {
           justifyContent: 'space-between',
         }}
       >
-        <div />
+        <div style={{ textAlign: 'center', fontSize: '14px', flexGrow: '1' }}>
+          <div style={{ fontSize: '20px', fontWeight: '500' }}>
+            {community.name}
+          </div>
+          <div>
+            ({community.num_voting}) voting members
+            {community.num_voting !== community.num_members
+              ? `, (${community.num_members - community.num_voting})  observers`
+              : ''}
+          </div>
+        </div>
         {community.id ? (
           <Fab color="primary" variant="extended" onClick={postTopic}>
             <PostAddIcon sx={{ mr: 1 }} />
