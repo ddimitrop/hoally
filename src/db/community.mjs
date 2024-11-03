@@ -189,6 +189,7 @@ export class Community {
         bool_or(m.is_moderator and m.hoauser_id = ${hoaUserId}) as is_moderator,
         bool_and(m.is_observer and m.hoauser_id = ${hoaUserId}) as is_observer,
         count(1) as num_members,
+        count(nullif(is_observer, true)) as num_voting,
         count(m.hoauser_id) as num_registered_members
         from community c 
         inner join member m 
@@ -219,6 +220,7 @@ export class Community {
         bool_or(m.is_moderator and m.hoauser_id = ${hoaUserId}) as is_moderator,
         bool_and(m.is_observer and m.hoauser_id = ${hoaUserId}) as is_observer,
         count(1) as num_members,
+        count(nullif(is_observer, true)) as num_voting,
         count(m.hoauser_id) as num_registered_members
         from community c 
         inner join member m 
