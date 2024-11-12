@@ -39,6 +39,8 @@ CREATE TABLE community (
 
 CREATE INDEX ON community(zipcode);
 
+CREATE TYPE frequency_enum AS ENUM ('never', 'daily', 'weekly', 'monthly');
+
 -- A user registered in hoally. Might be a member of one or more communities.
 CREATE TABLE hoauser (
     id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -59,7 +61,9 @@ CREATE TABLE hoauser (
     last_update_timestamp TIMESTAMP WITH TIME ZONE,
     email_validation_timestap TIMESTAMP WITH TIME ZONE,
     last_access_date DATE,
-    default_community INTEGER REFERENCES community(id) ON DELETE SET NULL
+    default_community INTEGER REFERENCES community(id) ON DELETE SET NULL,
+    email_frequency frequency_enum DEFAULT 'weekly',
+    last_email_timestamp TIMESTAMP WITH TIME ZONE
 );
 
 CREATE UNIQUE INDEX ON hoauser(hashed_name, hashed_password);
