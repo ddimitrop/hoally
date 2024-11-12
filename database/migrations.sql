@@ -6,3 +6,5 @@ alter table topic alter column images type varchar(100)[8];
 alter table vote_item alter column images type varchar(100)[8];
 alter table comment alter column images type varchar(100)[8];
 alter table hoauser drop column hashed_name;
+------ simplify invitations ------
+alter table member add column encrypted_token VARCHAR(200) UNIQUE;

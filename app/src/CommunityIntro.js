@@ -160,17 +160,18 @@ const CommunityIntro = ({ stepper, community, members }) => {
       </Stack>
       <Stack direction="row" spacing={2} justifyContent="end">
         <Button onClick={prevStep}>Go Back</Button>
+        <Button
+          variant={needToInvite() ? 'text' : 'contained'}
+          onClick={gotoCommunity}
+        >
+          Done
+        </Button>
         {needToInvite() ? (
-          <Fragment>
-            <Button onClick={gotoCommunity}>Skip</Button>
-            <Button variant="contained" onClick={showInvitations}>
-              Invite
-            </Button>
-          </Fragment>
-        ) : (
-          <Button variant="contained" onClick={gotoCommunity}>
-            Done
+          <Button variant="contained" onClick={showInvitations}>
+            Invite
           </Button>
+        ) : (
+          ''
         )}
       </Stack>
       <ConfirmDialog

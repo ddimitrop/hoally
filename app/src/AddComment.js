@@ -81,50 +81,54 @@ const AddComment = ({
     <Fragment>
       <Stack
         sx={{ marginTop: '12px' }}
-        direction="row"
-        spacing={2}
-        alignItems="center"
+        spacing={1}
         component="form"
         onSubmit={(event) => {
           event.preventDefault();
           postComment();
         }}
       >
-        <TextField
-          id="outlined-basic"
-          label="Comment"
-          variant="outlined"
-          size="small"
-          fullWidth
-          defaultValue={comment.discussion}
-          inputRef={discussion}
-          onChange={checkWasChanged}
-          autoFocus
-        />
-        {images.length < 8 ? (
-          <UploadButton done={imageUpload}></UploadButton>
-        ) : (
-          ''
-        )}
-        {!isNewComment() ? (
-          <Button
+        <Stack direction="row" spacing={2} alignItems="start">
+          <TextField
+            id="outlined-basic"
+            label="Comment"
+            variant="outlined"
             size="small"
-            color="error"
-            onClick={() => {
-              confirmDelete();
-            }}
-          >
-            Delete
+            fullWidth
+            multiline
+            maxRows={4}
+            defaultValue={comment.discussion}
+            inputRef={discussion}
+            onChange={checkWasChanged}
+            autoFocus
+          />
+          {images.length < 8 ? (
+            <UploadButton done={imageUpload}></UploadButton>
+          ) : (
+            ''
+          )}
+        </Stack>
+        <Stack direction="row" spacing={2} justifyContent="end">
+          {!isNewComment() ? (
+            <Button
+              size="small"
+              color="error"
+              onClick={() => {
+                confirmDelete();
+              }}
+            >
+              Delete
+            </Button>
+          ) : (
+            ''
+          )}
+          <Button size="small" variant="outlined" onClick={cancel}>
+            Cancel
           </Button>
-        ) : (
-          ''
-        )}
-        <Button size="small" variant="outlined" onClick={cancel}>
-          Cancel
-        </Button>
-        <Button size="small" variant="contained" type="submit">
-          {isNewComment() ? 'Post' : 'Change'}
-        </Button>
+          <Button size="small" variant="contained" type="submit">
+            {isNewComment() ? 'Post' : 'Change'}
+          </Button>
+        </Stack>
       </Stack>
       <Attachements
         prefix={`topic/${topicId}`}

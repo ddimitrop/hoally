@@ -21,6 +21,7 @@ export class Member {
   }
 
   static decrypt(crypto, data) {
+    delete data.encrypted_token;
     delete data.hashed_token;
     delete data.token_creation_timestamp;
     data.name = crypto.decrypt(data.encrypted_name);
@@ -115,15 +116,37 @@ export class Member {
               is_admin = true)`;
   }
 
-  async generateInvitation() {
+  async generateInvitation(tokenExpiration = TOKEN_EXPIRATION) {
     const { sql, crypto } = this.connection;
     const id = this.getData().id;
+
+    const [currrentEncryptedToken] = await sql`
+      select encrypted_token, hashed_token from member 
+      where id = ${id}
+      and now() - token_creation_timestamp < cast(${tokenExpiration} AS INTERVAL)`;
+
+    if (currrentEncryptedToken) {
+      const { encrypted_token: encryptedToken, hashed_token: hashedToken } =
+        currrentEncryptedToken;
+      if (hashedToken) {
+        const token = crypto.decrypt(encryptedToken);
+        return token;
+      }
+    }
+
     const token = crypto.shortRandom();
+    const encryptedToken = crypto.encrypt(token);
     const hashedToken = crypto.hash(token);
 
     await sql`
       update member
-      set hashed_token = ${hashedToken},
+      set encrypted_token = null, hashed_token = null
+      where hashed_token = ${hashedToken}`;
+
+    await sql`
+      update member
+      set encrypted_token = ${encryptedToken},
+          hashed_token = ${hashedToken},
           token_creation_timestamp = LOCALTIMESTAMP
       where id = ${id}`;
 

@@ -72,7 +72,8 @@ CREATE TABLE member (
     -- the membership should be orphan again.
     hoauser_id INTEGER REFERENCES hoauser(id) ON DELETE SET NULL,
     -- Used when there is no assigned hoauser_id for members that have not registered yet.
-    hashed_token VARCHAR(200) UNIQUE,
+    hashed_token VARCHAR(200) UNIQUE,   
+    encrypted_token VARCHAR(200),
     token_creation_timestamp TIMESTAMP WITH TIME ZONE,
     community_id INTEGER NOT NULL REFERENCES community(id) ON DELETE CASCADE,
     address VARCHAR(200) NOT NULL,

@@ -52,7 +52,6 @@ const InvitationsDialog = ({ control, community, members }) => {
   const closeInvitationsSent = () => {
     setInvitationsSent(false);
     setByEmail(hasEmails);
-    navigate(`/topic/${community.id}`);
   };
 
   const close = () => {
@@ -126,7 +125,7 @@ const InvitationsDialog = ({ control, community, members }) => {
         clearUp();
       })
       .catch((error) => {
-        global.setAppError(error);
+        global.setAppError(error.message);
       });
   };
 
