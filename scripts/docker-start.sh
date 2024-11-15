@@ -15,5 +15,10 @@ then
   psql --username=postgres < /usr/lib/hoally/database/schema.sql
 fi
 
+forcedomain=""
+if [[ ! "${@}" =~ "forcedomain" ]]
+then
+  forcedomain="--forcedomain www.hoally.net"
+fi
 
-node src/hoally.mjs --prod --https --forcedomain www.hoally.net "$@"
+node src/hoally.mjs --prod --https ${forcedomain} "$@"

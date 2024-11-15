@@ -16,8 +16,8 @@ fi
 LOCAL_RUN=/home/hoa/hoally-run/
 RUN=/usr/lib/hoally/run/
 SECRETS=${RUN}secrets/
-DATA=${RUN}/dev/data/
-IMAGES=${RUN}/dev/images/
+DATA=${RUN}dev/data/
+IMAGES=${RUN}dev/images/
 
 docker stop hoally-$environment 2>/dev/null
 docker run --rm -t \
@@ -31,4 +31,5 @@ docker run --rm -t \
   --name hoally-$environment hoally:$version \
   --cert '/etc/letsencrypt/live/lacroix.mynetgear.com/' \
   --forcedomain lacroix.mynetgear.com \
+  --forceport 8080 \
   --images ${IMAGES}

@@ -65,6 +65,9 @@ export class Server {
       if (!this.options.prod) {
         options.port = port;
       }
+      if (this.options.forceport) {
+        options.port = Number(this.options.forceport);
+      }
       if (this.options.https) {
         options.protocol = 'https';
       }
@@ -104,6 +107,10 @@ export class Server {
       httpApp.get('*', function (req, res, next) {
         const host = req.headers.host.replace(`:${httpPort}`, `:${port}`);
         const path = req.path;
+        console.log(
+          `Redirecting ${httpPort} with ${port} for ${req.headers.host} - ${req.path} ` +
+            `Will redirect to https://${host}${path}`,
+        );
         res.redirect(301, `https://${host}${path}`);
       });
       http.createServer(httpApp).listen(httpPort, function () {
@@ -149,7 +156,8 @@ export function parseOptions(program, args) {
     .option('--cert <string>', 'Path to the https cetificate directory')
     .option('--secrets <string>', 'Path to the secrets directory')
     .option('--images <string>', 'Path to the images directory')
-    .option('--forcedomain <string>', 'Redirect request to domain');
+    .option('--forcedomain <string>', 'Redirect request to domain')
+    .option('--forceport <integer>', 'Redirect request to port on domain');
   program.parse(args);
 
   return program.opts();
