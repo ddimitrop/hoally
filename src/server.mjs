@@ -104,6 +104,22 @@ export class Server {
       // Redirect http to https.
       const httpPort = this.options.prod ? PROD_HTTP_PORT : port + 2;
       const httpApp = this.express();
+
+      let httpAppOn = false;
+
+      // Need to pause listening on http to let certbot renew.
+      httpApp.get('/pause', (req, res, next) => {
+        if (!httpAppOn || !req.headers.host.startsWith('localhost')) {
+          next();
+          return;
+        }
+        httpAppOn = false;
+        console.log('Pausing http server');
+        httpServer.close();
+        setTimeout(startHttpServer, 60000);
+        return res.send('OK');
+      });
+
       httpApp.get('*', function (req, res, next) {
         const host = req.headers.host.replace(`:${httpPort}`, `:${port}`);
         const path = req.path;
@@ -113,9 +129,24 @@ export class Server {
         );
         res.redirect(301, `https://${host}${path}`);
       });
-      http.createServer(httpApp).listen(httpPort, function () {
-        console.log(`Redirecting http port ${httpPort} to ${port}`);
+
+      const httpServer = http.createServer(httpApp);
+      const startHttpServer = () => {
+        httpServer.listen(httpPort, function () {
+          httpAppOn = true;
+          console.log(`Redirecting http port ${httpPort} to ${port}`);
+        });
+      };
+
+      httpServer.on('error', (e) => {
+        if (e.code === 'EADDRINUSE') {
+          console.error('Http server address in use, retrying...');
+          setTimeout(() => {
+            startHttpServer();
+          }, 30000);
+        }
       });
+      startHttpServer();
 
       const httpsServer = https.createServer(certOptions, this.app);
       httpsServer.listen(port);
