@@ -316,6 +316,15 @@ const SingupDialog = ({ control, skipRedirect, defaultEmail }) => {
             Subscribe
           </Button>
         </DialogActions>
+        <div className="documents-small">
+          <a href="/privacy.html" target="_blank">
+            Privacy policy
+          </a>{' '}
+          -
+          <a href="/terms.html" target="_blank">
+            Terms of use
+          </a>
+        </div>
         <div
           style={{
             display: 'flex',

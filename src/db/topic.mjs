@@ -505,9 +505,9 @@ export class Topic {
         subComments = proposition.comments;
       } else {
         const prevComment = commentsById[comment.comment_id];
-        subComments = prevComment.comments;
+        subComments = prevComment?.comments;
       }
-      subComments.push(comment);
+      subComments?.push(comment);
     });
 
     return new Topic(connection, topic, hoaUserId);

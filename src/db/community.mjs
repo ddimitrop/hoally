@@ -241,7 +241,9 @@ const DEFAULT_INTRO = `# Welcome to <community_name> community.
 
 On this site, you can stay informed about announcements and proposals regarding ongoing issues. You can also share your opinions by voting, commenting, and posting your own announcements or proposals.
 
-Please keep your posts and comments respectful to maintain a harmonious community atmosphere. Note that your nickname and address will be visible to your neighbors, and inappropriate language may be moderated. However, voting and liking are anonymous, allowing you to express your opinions without worrying about jeopardizing your friendships with your neighbors.`;
+Please keep your posts and comments respectful to maintain a harmonious community atmosphere. Note that your nickname and address will be visible to your neighbors, and inappropriate language may be moderated. However, voting and liking are anonymous, allowing you to express your opinions without worrying about jeopardizing your friendships with your neighbors.
+
+Before using this site please read our [Privacy Policy](/privacy.html) and our [Terms of Use](/terms.html).`;
 
 const DEFAULT_INVITATION_TEXT = `#### Dear <invitation_name> - owner of the property at <address>,
 
@@ -251,6 +253,8 @@ You can also share your opinions by voting, commenting, and posting your own ann
 Please [follow the invitation link](<invitation_link>) to sign up and participate in our communitity.  
 __EMAIL_ONLY_START
 If you received this message by mistake, please [follow the unregistration link](<unregistration_link>) to stop receiving messages.
+
+Before using this site please read our [Privacy Policy](https://www.hoally.net/privacy.html) and our [Terms of Use](https://www.hoally.net/terms.html).
 __EMAIL_ONLY_END
 
 __POST_ONLY_START

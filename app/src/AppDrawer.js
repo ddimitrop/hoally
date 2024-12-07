@@ -133,6 +133,15 @@ const AppDrawer = ({ control }) => {
                 </ListItemButton>
               </ListItem>
             </List>
+            <div className="documents-small">
+              <a href="/privacy.html" target="_blank">
+                Privacy policy
+              </a>{' '}
+              -
+              <a href="/terms.html" target="_blank">
+                Terms of use
+              </a>
+            </div>
           </Box>
         </Box>
       </Drawer>

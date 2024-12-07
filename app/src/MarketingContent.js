@@ -75,6 +75,15 @@ const MarketingContent = () => {
           consideration for the board&apos;s final decisions.
         </p>
       </div>
+      <div className="documents">
+        <a href="/privacy.html" target="_blank">
+          Privacy policy
+        </a>{' '}
+        -
+        <a href="/terms.html" target="_blank">
+          Terms of use
+        </a>
+      </div>
     </div>
   );
 };
