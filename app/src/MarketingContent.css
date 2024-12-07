@@ -158,3 +158,14 @@
 .vote-graphic {
   background-image: url('static/vote.jpg');
 }
+
+.documents {
+  text-align: end;
+  font-size: 14px;
+  margin-right: 32px;
+  margin-bottom: 8px;
+}
+
+.documents a {
+  color: #444;
+}

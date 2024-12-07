@@ -47,7 +47,7 @@ const ViewTopic = () => {
     errorMessage ||= error || appError;
   }
   if (errorMessage) {
-    if (errorMessage != NO_AUTHENTICATION_COOKIE) {
+    if (errorMessage !== NO_AUTHENTICATION_COOKIE) {
       setTimeout(() => {
         if (!hasRedirect) {
           setHasRedirect(true);
@@ -86,6 +86,7 @@ const ViewTopic = () => {
   const cannotEdit = (topic) => {
     if (topic.member_id !== member.id || !topic.member_id) return true;
     if (!topic.is_open) return true;
+    if (member.is_moderator) return false;
     if (
       Date.now() - new Date(topic.creation_timestamp) >
       // Edit is not allowed after 1 day.

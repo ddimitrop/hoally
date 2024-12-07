@@ -82,7 +82,7 @@ const TopicsList = () => {
     <Stack sx={{ maxWidth: '800px' }}>
       {!hiddenIntro && community.intro ? (
         <Alert
-          sx={{ marginBottom: '16px', maxHeight: '200px' }}
+          sx={{ marginBottom: '16px', maxHeight: '225px' }}
           icon={<HolidayVillageOutlinedIcon fontSize="inherit" />}
           severity="success"
           onClose={hideIntro}
@@ -107,10 +107,8 @@ const TopicsList = () => {
             {community.name}
           </div>
           <div>
-            ({community.num_voting}) voting members
-            {community.num_voting !== community.num_members
-              ? `, (${community.num_members - community.num_voting})  observers`
-              : ''}
+            ({community.num_registered_members}/{community.num_members})
+            registered members
           </div>
         </div>
         {community.id ? (

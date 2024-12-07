@@ -10,4 +10,5 @@ alter table hoauser drop column hashed_name;
 alter table member add column encrypted_token VARCHAR(200) UNIQUE;
 CREATE TYPE frequency_enum AS ENUM ('never', 'daily', 'weekly', 'monthly');
 alter table hoauser add column email_frequency frequency_enum DEFAULT 'weekly';
+alter table hoauser add column own_email_frequency frequency_enum DEFAULT 'daily';
 alter table hoauser add column last_email_timestamp TIMESTAMP WITH TIME ZONE;

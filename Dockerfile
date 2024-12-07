@@ -1,12 +1,13 @@
 FROM postgres:16-alpine
 
 COPY scripts/docker-start.sh  /usr/local/bin/
+COPY scripts/cert-renew.sh  /usr/local/bin/
 
 RUN apk add nodejs
 RUN apk add npm
 RUN apk add certbot
 
-RUN (crontab -l; echo "27      7       *       *       *       certbot renew -q")| crontab -
+RUN (crontab -l; echo "27      7       *       *       *       /usr/local/bin/cert-renew.sh")| crontab -
 
 COPY src/ /usr/lib/hoally/src/
 COPY package.json /usr/lib/hoally/

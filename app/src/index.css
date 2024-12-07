@@ -162,3 +162,13 @@ body {
   /* 56 (topbar) + 48 alert + 24 */
   height: calc(100% - 138px);
 }
+
+.documents-small {
+  font-size: 12px;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.documents-small a {
+  color: #444;
+}

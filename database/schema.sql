@@ -63,6 +63,7 @@ CREATE TABLE hoauser (
     last_access_date DATE,
     default_community INTEGER REFERENCES community(id) ON DELETE SET NULL,
     email_frequency frequency_enum DEFAULT 'weekly',
+    own_email_frequency frequency_enum DEFAULT 'daily',
     last_email_timestamp TIMESTAMP WITH TIME ZONE
 );
 
